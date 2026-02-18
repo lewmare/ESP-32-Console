@@ -419,9 +419,18 @@ void loop()
 
   if (millis() < startupStartTime)
   {
+
+    int intervaldot = millis() / 500 % 4;
+    u8g2.setFont(u8g2_font_5x8_tf);
+    char scanMsg[20];
+    sprintf(scanMsg, "Starting Console%s", intervaldot == 0 ? "" : intervaldot == 1 ? "."
+                                                               : intervaldot == 2   ? ".."
+                                                                                    : "...");
+
     StartupAnim.update();
     u8g2.clearBuffer();
     StartupAnim.draw(u8g2); // draw() gantikan render()
+    u8g2.drawStr(20, 61, scanMsg);
     u8g2.sendBuffer();
     return;
   }
@@ -1028,8 +1037,8 @@ void drawWifiScanner()
              dots == 0 ? "." : dots == 1 ? ".."
                            : dots == 2   ? "..."
                                          : "....");
-    int cx = FindCenterX(u8g2.getStrWidth(scanMsg));
     u8g2.setFont(u8g2_font_5x8_tf);
+    int cx = FindCenterX(u8g2.getStrWidth(scanMsg));
     u8g2.drawStr(cx, 54, scanMsg);
     break;
   }
