@@ -218,6 +218,7 @@ int totalCredits = sizeof(credits) / sizeof(credits[0]);
 #include "Bitmap/Bitmap_anim.h"
 
 BitmapAnim StartupAnim;
+BitmapAnim WifiScanAnim;
 
 // ==================== FUNCTION DECLARATIONS ====================
 void drawMenu();
@@ -394,7 +395,8 @@ void setup()
   WiFi.disconnect();
 
   // Init anim
-  StartupAnim.init((const uint8_t *)Startupframes, 48, 48, 28, 21, 40, 8, ANIM_LOOP, ANIM_DIR_H, true, ANIM_MSB);
+  StartupAnim.init((const uint8_t *)Startup_frames, 48, 48, 28, 21, 40, 8, ANIM_LOOP, ANIM_DIR_H, true, ANIM_MSB);
+  WifiScanAnim.init((const uint8_t *)WifiScanning_frames, 32, 32, 28, 21, 48, 8, ANIM_LOOP, ANIM_DIR_H, true, ANIM_MSB);
 
   currentSettings.brightnessIndex = brightnessLevel;
   currentSettings.difficultyIndex = difficultyLevel;
@@ -1015,6 +1017,10 @@ void drawWifiScanner()
   case WIFI_SCANNING:
   {
     // Tampilkan animasi titik berdasarkan waktu (tanpa delay)
+
+    WifiScanAnim.update();
+    WifiScanAnim.draw(u8g2);
+
     unsigned long elapsed = millis() - scanStartTime;
     int dots = (elapsed / 400) % 4; // 0..3 titik bergantian
     char scanMsg[20];
@@ -1022,8 +1028,9 @@ void drawWifiScanner()
              dots == 0 ? "." : dots == 1 ? ".."
                            : dots == 2   ? "..."
                                          : "....");
-    int cx = (SCREEN_WIDTH - u8g2.getStrWidth(scanMsg)) / 2;
-    u8g2.drawStr(cx, 35, scanMsg);
+    int cx = FindCenterX(u8g2.getStrWidth(scanMsg));
+    u8g2.setFont(u8g2_font_5x8_tf);
+    u8g2.drawStr(cx, 54, scanMsg);
     break;
   }
 
