@@ -4,6 +4,7 @@
 #include <Adafruit_MPU6050.h>
 #include <Adafruit_Sensor.h>
 #include <WiFi.h>
+#include <IRremote.hpp>
 
 // ==================== INISIALISASI ====================
 U8G2_SH1106_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE);
@@ -58,6 +59,24 @@ const char *VolumeLevelLabels[5] = {"Mute", "Low", "Med", "High", "Max"};
 const char *BrightnessLevelLabels[5] = {"Off", "Low", "Med", "High", "Max"};
 const char *DifficultyLevelLabels[3] = {"Easy", "Med", "Hard"};
 const char *settingNames[3] = {"Brightness", "Difficulty", "Volume"};
+
+//=================== IR Cloning VARIABLES ====================
+const int IR_RECEIVE_PIN = 26;
+const int IR_SEND_PIN = 17;
+uint32_t savedCode = 0;
+bool codeSaved = false;
+bool captureMode = false;
+bool onIrMenu = false;
+
+const int NUM_IR_MENU = 2;
+
+const char IR_MENU[NUM_IR_MENU][20] = {
+    "Capture IR",
+    "Send IR"};
+
+int SelectedIrMenu = 0;
+int IR_MENU_ITEM_HEIGHT = 21;
+int IR_MENU_Selected_outlineY = 0;
 
 // ==================== DIFFICULTY HELPER ====================
 // Ambil index difficulty saat ini (0=Easy, 1=Med, 2=Hard)
@@ -251,6 +270,9 @@ void drawDinoGame();
 void initGeoDashGame();
 void updateGeoDashGame();
 void drawGeoDashGame();
+
+void IRClonning();
+void launchSelectedIrMenu();
 
 void showCredit();
 
@@ -473,6 +495,7 @@ void loop()
       drawGeoDashGame();
       break;
     case 7:
+      IRClonning();
       break;
     case 8:
       showCredit();
@@ -496,7 +519,21 @@ void loop()
       {
         if (inGameMenu)
         {
-          launchSelectedSetting();
+          if (currentGame == 9)
+          {
+            if (!onSettingElement)
+            {
+              onSettingElement = true;
+            }
+            else
+            {
+              launchSelectedSetting();
+            }
+          }
+          else if (currentGame == 7)
+          {
+            launchSelectedIrMenu();
+          }
           return;
         }
         exitGame();
@@ -583,6 +620,10 @@ void launchGame(int gameIndex)
   case 6:
     initGeoDashGame();
     break;
+  case 7:
+    inGameMenu = true;
+
+    break;
   case 9:
     inGameMenu = true;
     break;
@@ -595,6 +636,7 @@ void exitGame()
   inGame = false;
   onSettingElement = false;
   inGameMenu = false;
+  onIrMenu = false;
   currentGame = -1;
   SelectedSetting = 0;
   SETTING_Selected_outlineY = 0;
@@ -1467,7 +1509,7 @@ void showSettings()
   u8g2.firstPage();
   do
   {
-    u8g2.drawBitmap(0, SETTING_Selected_outlineY, 128 / 8, 21, setting_menu_bitmap__Icon_selectedOutline);
+    u8g2.drawBitmap(0, SETTING_Selected_outlineY, 128 / 8, 21, second_menu_bitmap__Icon_selectedOutline);
 
     u8g2.setDrawColor(SelectedSetting == 0 ? 0 : 1);
     u8g2.setFont(SelectedSetting == 0 ? u8g2_font_7x14B_mf : u8g2_font_7x14_mf);
@@ -1486,5 +1528,87 @@ void showSettings()
     u8g2.drawStr(27, 58, setting_menu_bitmap_allArray_names[2]);
     u8g2.setDrawColor(1);
     u8g2.drawBitmap(3, 46, 2, 16, setting_menu_bitmap_allArray[2]);
+  } while (u8g2.nextPage());
+}
+
+void DrawIrMenuElement(int elementIndex)
+{
+  u8g2.clearBuffer();
+  switch (elementIndex)
+  {
+  case 0:
+  {
+    u8g2.setFont(u8g2_font_8x13B_tf);
+    int centerX_SettingName = FindCenterX(u8g2.getStrWidth(IR_MENU[0]), 128);
+    u8g2.drawStr(centerX_SettingName, 14, IR_MENU[0]);
+    break;
+  }
+  case 1:
+  {
+    u8g2.setFont(u8g2_font_8x13B_tf);
+    int centerX_SettingName_1 = FindCenterX(u8g2.getStrWidth(IR_MENU[1]), 128);
+    u8g2.drawStr(centerX_SettingName_1, 14, IR_MENU[1]);
+    break;
+  }
+  
+  }
+  u8g2.sendBuffer();
+}
+
+void launchSelectedIrMenu()
+{
+  inGameMenu = false;
+  onIrMenu = true;
+  buzzer.playOnceTone(1200, 100);
+}
+
+void IRClonning()
+{
+  if (ButtonShortPressedGame)
+  {
+    ButtonShortPressedGame = false;
+    SelectedIrMenu = (SelectedIrMenu + 1) % NUM_IR_MENU;
+    IR_MENU_Selected_outlineY = SelectedIrMenu * IR_MENU_ITEM_HEIGHT;
+    buzzer.playOnceTone(800, 50);
+  }
+
+  if (onIrMenu)
+  {
+    DrawIrMenuElement(SelectedIrMenu);
+
+    switch (SelectedIrMenu)
+    {
+    case 0:
+      // IR Cloning
+      Serial.println("Launching IR Cloning...");
+      // Tambahkan kode untuk memulai proses IR Cloning di sini
+      break;
+    case 1:
+      // IR Remote Control
+      Serial.println("Launching IR Remote Control...");
+      // Tambahkan kode untuk memulai proses IR Remote Control di sini
+      break;
+    default:
+      break;
+    }
+  }
+
+  u8g2.firstPage();
+  do
+  {
+    u8g2.drawBitmap(0, IR_MENU_Selected_outlineY, 128 / 8, 21, second_menu_bitmap__Icon_selectedOutline);
+
+    u8g2.setDrawColor(SelectedIrMenu == 0 ? 0 : 1);
+    u8g2.setFont(SelectedIrMenu == 0 ? u8g2_font_7x14B_mf : u8g2_font_7x14_mf);
+    u8g2.drawStr(27, 16, IR_MENU[0]);
+    u8g2.setDrawColor(1);
+    u8g2.drawBitmap(3, 2, 2, 16, setting_menu_bitmap_allArray[0]);
+
+    u8g2.setDrawColor(SelectedIrMenu == 1 ? 0 : 1);
+    u8g2.setFont(SelectedIrMenu == 1 ? u8g2_font_7x14B_mf : u8g2_font_7x14_mf);
+    u8g2.drawStr(27, 38, IR_MENU[1]);
+    u8g2.setDrawColor(1);
+    u8g2.drawBitmap(3, 24, 2, 16, setting_menu_bitmap_allArray[1]);
+
   } while (u8g2.nextPage());
 }
