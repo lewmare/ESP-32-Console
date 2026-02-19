@@ -157,8 +157,8 @@ int wifiRSSI[10];
 unsigned long lastWifiScan = 0;
 unsigned long scanStartTime = 0;
 WifiScanState wifiScanState = WIFI_IDLE;
-const unsigned long WIFI_SCAN_INTERVAL = 10000;  // interval antar scan (ms)
-const unsigned long WIFI_SCAN_TIMEOUT_MS = 5000; // timeout maksimal nunggu hasil
+const unsigned long WIFI_SCAN_INTERVAL = 16000;  // interval antar scan (ms)
+const unsigned long WIFI_SCAN_TIMEOUT_MS = 8000; // timeout maksimal nunggu hasil
 
 // ==================== DINO RUNNER VARIABLES ====================
 const int DINO_WIDTH = 8;
