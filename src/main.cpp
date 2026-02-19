@@ -521,14 +521,7 @@ void loop()
         {
           if (currentGame == 9)
           {
-            if (!onSettingElement)
-            {
-              onSettingElement = true;
-            }
-            else
-            {
-              launchSelectedSetting();
-            }
+            launchSelectedSetting();
           }
           else if (currentGame == 7)
           {
@@ -1550,8 +1543,7 @@ void DrawIrMenuElement(int elementIndex)
     u8g2.drawStr(centerX_SettingName_1, 14, IR_MENU[1]);
     break;
   }
-  
-  }
+    }
   u8g2.sendBuffer();
 }
 
@@ -1564,13 +1556,6 @@ void launchSelectedIrMenu()
 
 void IRClonning()
 {
-  if (ButtonShortPressedGame)
-  {
-    ButtonShortPressedGame = false;
-    SelectedIrMenu = (SelectedIrMenu + 1) % NUM_IR_MENU;
-    IR_MENU_Selected_outlineY = SelectedIrMenu * IR_MENU_ITEM_HEIGHT;
-    buzzer.playOnceTone(800, 50);
-  }
 
   if (onIrMenu)
   {
@@ -1591,6 +1576,16 @@ void IRClonning()
     default:
       break;
     }
+
+    return;
+  }
+
+  if (ButtonShortPressedGame)
+  {
+    ButtonShortPressedGame = false;
+    SelectedIrMenu = (SelectedIrMenu + 1) % NUM_IR_MENU;
+    IR_MENU_Selected_outlineY = SelectedIrMenu * IR_MENU_ITEM_HEIGHT;
+    buzzer.playOnceTone(800, 50);
   }
 
   u8g2.firstPage();
