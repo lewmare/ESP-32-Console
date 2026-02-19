@@ -1,0 +1,29 @@
+[33mcommit 5b706ee689c656406b77e7c4947027bbc7b7e96d[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m
+Author: lewmare <lewmare0@gmail.com>
+Date:   Thu Feb 19 13:48:05 2026 +0700
+
+    IrGUI Update
+
+[33mcommit 87729e6b2b724598fb8ba25801aa574e9996b053[m
+Author: lewmare <lewmare0@gmail.com>
+Date:   Wed Feb 18 20:46:17 2026 +0700
+
+    Added Ir Menu
+
+[33mcommit 2e3adcba22953e940777e49c203eed4b70a3be63[m
+Author: lewmare <lewmare0@gmail.com>
+Date:   Wed Feb 18 18:31:14 2026 +0700
+
+    Startup info Added
+
+[33mcommit de22f6f407563251493f13d46d7f52a0a56d27be[m
+Author: lewmare <lewmare0@gmail.com>
+Date:   Wed Feb 18 15:34:58 2026 +0700
+
+    Add Wifi Scanning Animation
+
+[33mcommit 3663645b2c51d1cb0f6f2cd875d5be6c3a215e35[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m
+Author: lewmare <lewmare0@gmail.com>
+Date:   Wed Feb 18 13:46:36 2026 +0700
+
+    Initial commit - ESP_32 project
