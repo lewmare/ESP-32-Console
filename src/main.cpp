@@ -21,15 +21,18 @@ BitmapAnim WifiScanAnim;
 
 #include "Declarations.h"
 
+// ==================== BUZZER ENGINE SETUP ====================
+#include "Buzzer/BuzzerEngine.h"
+#include "Buzzer/BuzzerMelody.h"
+
+BuzzerEngine buzzer;
+
+// ==================== HELPER FUNCTIONS ====================
+
 int FindCenterX(int Objwidth, int Width = SCREEN_WIDTH)
 {
   return (Width - Objwidth) / 2;
 }
-
-// ==================== BUZZER ENGINE SETUP ====================
-#include "Buzzer/BuzzerEngine.h"
-
-BuzzerEngine buzzer;
 
 // ==================== SETUP ====================
 void setup()
