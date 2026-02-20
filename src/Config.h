@@ -183,7 +183,7 @@ bool isDiving = false;
 int gameSpeed = 3;
 unsigned long lastSpeedIncrease = 0;
 
-// ==================== GEOMETRY DASH VARIABLES ====================
+// ==================== GEO BIRD VARIABLES ====================
 const int CUBE_SIZE = 6;
 const int GD_GRAVITY = 1;
 const int GD_JUMP_STRENGTH = -6;

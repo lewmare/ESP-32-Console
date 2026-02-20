@@ -66,8 +66,8 @@ void setup()
   WiFi.disconnect();
 
   // Init anim
-  StartupAnim.init((const uint8_t *)Startup_frames, 48, 48, 28, 21, 40, 8, ANIM_LOOP, ANIM_DIR_H, true, ANIM_MSB);
-  WifiScanAnim.init((const uint8_t *)WifiScanning_frames, 32, 32, 28, 21, 48, 8, ANIM_LOOP, ANIM_DIR_H, true, ANIM_MSB);
+  StartupAnim.init((const uint8_t *)Startup_frames, 48, 48, Startup_frames_COUNT, 21, 40, 8, ANIM_LOOP, ANIM_DIR_H, true, ANIM_MSB);
+  WifiScanAnim.init((const uint8_t *)WifiScanning_frames, 32, 32, WifiScanning_frames_COUNT, 21, 48, 8, ANIM_LOOP, ANIM_DIR_H, true, ANIM_MSB);
 
   currentSettings.brightnessIndex = brightnessLevel;
   currentSettings.difficultyIndex = difficultyLevel;
@@ -543,6 +543,8 @@ void updateSnakeGame()
       break;
     }
   }
+
+  // Cek for food collision
 
   if (died)
   {
@@ -1088,6 +1090,7 @@ void toggleBrightnessSetting()
 {
   if (!ButtonShortPressedGame)
     return;
+
   ButtonShortPressedGame = false;
   currentSettings.brightnessIndex = (currentSettings.brightnessIndex + 1) % 5;
   applySettings();
@@ -1109,8 +1112,9 @@ void toggleSoundSetting()
   ButtonShortPressedGame = false;
   currentSettings.volumeIndex = (currentSettings.volumeIndex + 1) % 5;
   applySettings();
+
   if (VolumeLevelValues[currentSettings.volumeIndex] > 0)
-    buzzer.playOnceTone(1000, 100);
+    buzzer.playOnceTone(NOTE_G5, 80);
 }
 
 void launchSelectedSetting()
