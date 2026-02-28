@@ -69,6 +69,7 @@ const char IR_MENU[NUM_IR_MENU][20] = {
 int SelectedIrMenu = 0;
 int IR_MENU_ITEM_HEIGHT = 21;
 int IR_MENU_Selected_outlineY = 0;
+unsigned long CaptureStartTime = 0;
 
 // ==================== DIFFICULTY HELPER ====================
 // Ambil index difficulty saat ini (0=Easy, 1=Med, 2=Hard)

@@ -18,6 +18,8 @@ Adafruit_MPU6050 mpu;
 
 BitmapAnim StartupAnim;
 BitmapAnim WifiScanAnim;
+BitmapAnim IRCaptureAnim;
+BitmapAnim IRSendingAnim;
 
 #include "Declarations.h"
 
@@ -68,6 +70,8 @@ void setup()
   // Init anim
   StartupAnim.init((const uint8_t *)Startup_frames, 48, 48, Startup_frames_COUNT, 21, 40, 8, ANIM_LOOP, ANIM_DIR_H, true, ANIM_MSB);
   WifiScanAnim.init((const uint8_t *)WifiScanning_frames, 32, 32, WifiScanning_frames_COUNT, 21, 48, 8, ANIM_LOOP, ANIM_DIR_H, true, ANIM_MSB);
+  IRCaptureAnim.init((const uint8_t *)IR_WAITINGCAPTURE_frames, 32, 32, IR_WAITINGCAPTURE_frames_COUNT, 21, 48, 8, ANIM_LOOP, ANIM_DIR_H, true, ANIM_MSB);
+  IRSendingAnim.init((const uint8_t *)IR_SENDING_frames, 32, 32, IR_SENDING_frames_COUNT, 21, 48, 8, ANIM_LOOP, ANIM_DIR_H, true, ANIM_MSB);
 
   currentSettings.brightnessIndex = brightnessLevel;
   currentSettings.difficultyIndex = difficultyLevel;
@@ -1184,16 +1188,36 @@ void DrawIrMenuElement(int elementIndex)
   {
   case 0:
   {
-    u8g2.setFont(u8g2_font_8x13B_tf);
-    int centerX_SettingName = FindCenterX(u8g2.getStrWidth(IR_MENU[0]), 128);
-    u8g2.drawStr(centerX_SettingName, 14, IR_MENU[0]);
+    IRCaptureAnim.update();
+    IRCaptureAnim.draw(u8g2);
+
+    unsigned long elapsed = millis() - CaptureStartTime;
+    int dots = (elapsed / 400) % 4; // 0..3 titik bergantian
+    char CaptureMsg[20];
+    snprintf(CaptureMsg, sizeof(CaptureMsg), "Capturing%s",
+             dots == 0 ? "." : dots == 1 ? ".."
+                           : dots == 2   ? "..."
+                                         : "....");
+    u8g2.setFont(u8g2_font_5x8_tf);
+    int cx = FindCenterX(u8g2.getStrWidth(CaptureMsg));
+    u8g2.drawStr(cx, 54, CaptureMsg);
     break;
   }
   case 1:
   {
-    u8g2.setFont(u8g2_font_8x13B_tf);
-    int centerX_SettingName_1 = FindCenterX(u8g2.getStrWidth(IR_MENU[1]), 128);
-    u8g2.drawStr(centerX_SettingName_1, 14, IR_MENU[1]);
+    IRSendingAnim.update();
+    IRSendingAnim.draw(u8g2);
+
+    unsigned long elapsed = millis() - CaptureStartTime;
+    int dots = (elapsed / 400) % 4; // 0..3 titik bergantian
+    char CaptureMsg[20];
+    snprintf(CaptureMsg, sizeof(CaptureMsg), "Sending%s",
+             dots == 0 ? "." : dots == 1 ? ".."
+                           : dots == 2   ? "..."
+                                         : "....");
+    u8g2.setFont(u8g2_font_5x8_tf);
+    int cx = FindCenterX(u8g2.getStrWidth(CaptureMsg));
+    u8g2.drawStr(cx, 54, CaptureMsg);
     break;
   }
   }
