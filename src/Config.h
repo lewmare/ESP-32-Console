@@ -53,9 +53,11 @@ const char *DifficultyLevelLabels[3] = {"Easy", "Med", "Hard"};
 const char *settingNames[3] = {"Brightness", "Difficulty", "Volume"};
 
 //=================== IR Cloning VARIABLES ====================
-const int IR_RECEIVE_PIN = 26;
-const int IR_SEND_PIN = 17;
-uint32_t savedCode = 0;
+// ===== PIN =====
+#define IR_RECEIVE_PIN 26
+#define IR_SEND_PIN 17
+#define IR_CAPTURE_BUF_SIZE 1024
+
 bool codeSaved = false;
 bool captureMode = false;
 bool onIrMenu = false;

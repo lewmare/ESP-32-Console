@@ -4,7 +4,11 @@
 #include <Adafruit_MPU6050.h>
 #include <Adafruit_Sensor.h>
 #include <WiFi.h>
-#include <IRremote.hpp>
+
+#include "IR_Clone.h"
+
+// ==================== IR SETUP =========================
+IRManager irManager;
 
 // ==================== INISIALISASI ====================
 U8G2_SH1106_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE);
@@ -80,6 +84,9 @@ void setup()
 
   buzzer.init(BUZZER_PIN);
   buzzer.play(melody_Startup, duration_Startup, sizeof(melody_Startup) / sizeof(melody_Startup[0]));
+
+  irManager.begin(IR_RECEIVE_PIN, IR_SEND_PIN);
+
   Serial.println("Gaming Console Started!");
 }
 
@@ -1233,23 +1240,118 @@ void launchSelectedIrMenu()
 
 void IRClonning()
 {
-
+  // ── Sub-menu: Capture / Send ──────────────────────────────
   if (onIrMenu)
   {
-    DrawIrMenuElement(SelectedIrMenu);
-
     switch (SelectedIrMenu)
     {
+    // ════════════════════════════════
+    // CASE 0 — CAPTURE
+    // ════════════════════════════════
     case 0:
-      // IR Cloning
-      Serial.println("Launching IR Cloning...");
-      // Tambahkan kode untuk memulai proses IR Cloning di sini
+    {
+      // Jalankan IR receive logic setiap frame
+      IRCaptureResult res = irManager.update();
+
+      if (res == IR_RESULT_OK)
+      {
+        buzzer.playOnceTone(1200, 80); // feedback: sinyal masuk
+        CaptureStartTime = millis();   // reset timer animasi teks
+      }
+
+      // Render: animasi + teks status
+      u8g2.clearBuffer();
+      IRCaptureAnim.update();
+      IRCaptureAnim.draw(u8g2);
+
+      // Baris teks animasi titik (Capturing... / Captured!)
+      u8g2.setFont(u8g2_font_5x8_tf);
+      if (res == IR_RESULT_OK || irManager.hasSignal())
+      {
+        // Tampilkan info sinyal yang baru direkam
+        char line1[24], line2[20];
+        snprintf(line1, sizeof(line1), "OK! %s",
+                 irManager.describeSelected().c_str());
+        snprintf(line2, sizeof(line2), "Slot %s saved",
+                 irManager.slotLabel().c_str());
+        int cx1 = FindCenterX(u8g2.getStrWidth(line1));
+        int cx2 = FindCenterX(u8g2.getStrWidth(line2));
+        u8g2.drawStr(cx1, 54, line1);
+        u8g2.drawStr(cx2, 63, line2);
+      }
+      else
+      {
+        // Belum ada sinyal — animasi titik
+        unsigned long elapsed = millis() - CaptureStartTime;
+        int dots = (elapsed / 400) % 4;
+        char msg[20];
+        snprintf(msg, sizeof(msg), "Capturing%s",
+                 dots == 0 ? "." : dots == 1 ? ".."
+                               : dots == 2   ? "..."
+                                             : "....");
+        int cx = FindCenterX(u8g2.getStrWidth(msg));
+        u8g2.drawStr(cx, 54, msg);
+      }
+
+      u8g2.sendBuffer();
       break;
+    }
+
+    // ════════════════════════════════
+    // CASE 1 — SEND
+    // ════════════════════════════════
     case 1:
-      // IR Remote Control
-      Serial.println("Launching IR Remote Control...");
-      // Tambahkan kode untuk memulai proses IR Remote Control di sini
+    {
+      // Kirim saat tombol pendek
+      if (ButtonShortPressedGame)
+      {
+        ButtonShortPressedGame = false;
+        IRSendResult res = irManager.send();
+        if (res == IR_SEND_OK)
+          buzzer.playOnceTone(1000, 150); // feedback: terkirim
+        else
+          buzzer.playOnceTone(400, 300); // feedback: kosong
+        CaptureStartTime = millis();     // reset timer teks
+      }
+
+      // Render: animasi + teks status
+      u8g2.clearBuffer();
+      IRSendingAnim.update();
+      IRSendingAnim.draw(u8g2);
+
+      u8g2.setFont(u8g2_font_5x8_tf);
+      if (!irManager.hasSignal())
+      {
+        // Tidak ada sinyal tersimpan
+        const char *noSig = "No signal! Capture first";
+        u8g2.drawStr(FindCenterX(u8g2.getStrWidth(noSig)), 54, noSig);
+      }
+      else
+      {
+        // Tampilkan info sinyal + instruksi
+        char line1[24];
+        char line2[20];
+
+        snprintf(line1, sizeof(line1), "%s",
+                 irManager.describeSelected().c_str());
+        snprintf(line2, sizeof(line2), "Press = Send");
+        unsigned long elapsed = millis() - CaptureStartTime;
+        int dots = (elapsed / 400) % 4;
+        char sending[20];
+        snprintf(sending, sizeof(sending), "Sending%s",
+                 dots == 0 ? "." : dots == 1 ? ".."
+                               : dots == 2   ? "..."
+                                             : "....");
+        int cx1 = FindCenterX(u8g2.getStrWidth(line1));
+        int cx2 = FindCenterX(u8g2.getStrWidth(line2));
+        u8g2.drawStr(cx1, 54, line1);
+        u8g2.drawStr(cx2, 63, line2);
+      }
+
+      u8g2.sendBuffer();
       break;
+    }
+
     default:
       break;
     }
@@ -1257,6 +1359,7 @@ void IRClonning()
     return;
   }
 
+  // ── Menu navigasi IR (Capture / Send) ────────────────────
   if (ButtonShortPressedGame)
   {
     ButtonShortPressedGame = false;
@@ -1268,7 +1371,8 @@ void IRClonning()
   u8g2.firstPage();
   do
   {
-    u8g2.drawBitmap(0, IR_MENU_Selected_outlineY, 128 / 8, 21, second_menu_bitmap__Icon_selectedOutline);
+    u8g2.drawBitmap(0, IR_MENU_Selected_outlineY, 128 / 8, 21,
+                    second_menu_bitmap__Icon_selectedOutline);
 
     u8g2.setDrawColor(SelectedIrMenu == 0 ? 0 : 1);
     u8g2.setFont(SelectedIrMenu == 0 ? u8g2_font_7x14B_mf : u8g2_font_7x14_mf);
