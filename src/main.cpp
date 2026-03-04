@@ -691,7 +691,7 @@ void updateWifiScanner()
     else
     {
       // Error (result == WIFI_SCAN_FAILED, dll)
-      wifiNetworkCount = 0;
+      wifiNetworkCount = -1;
       WiFi.scanDelete();
       Serial.println("[WiFi] Scan failed");
     }
@@ -761,10 +761,16 @@ void drawWifiScanner()
         u8g2.print("dB");
         yPos += 11;
       }
+
       if (wifiNetworkCount == 0)
       {
         u8g2.setCursor(5, 40);
         u8g2.print("No networks found");
+      }
+      if (wifiNetworkCount < 0)
+      {
+        u8g2.setCursor(5, 40);
+        u8g2.print("Scan Failed" + String(wifiNetworkCount < 0 ? " (Error)" : ""));
       }
     }
     break;
