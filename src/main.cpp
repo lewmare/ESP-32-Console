@@ -46,7 +46,10 @@ void setup()
   Wire.begin(21, 22);
   Serial.begin(921600);
   pinMode(BUZZER_PIN, OUTPUT);
-  pinMode(Button, INPUT_PULLUP);
+
+  pinMode(EnterButton, INPUT_PULLUP);
+  pinMode(UPButton, INPUT_PULLUP);
+  pinMode(DOWNButton, INPUT_PULLUP);
 
   u8g2.begin();
   u8g2.setBitmapMode(1);
@@ -165,18 +168,27 @@ void loop()
       break;
     }
 
-    int button_state = digitalRead(Button);
-    if (button_state == LOW && !isPressed)
+    int Enterbutton_state = digitalRead(EnterButton);
+    int UPButton_state = digitalRead(UPButton);
+    int DOWNButton_state = digitalRead(DOWNButton);
+
+    if (Enterbutton_state == LOW && !EnterPressed)
     {
-      isPressed = true;
+      EnterPressed = true;
       startPressTime = millis();
     }
-    if (button_state == HIGH && isPressed)
+    if (Enterbutton_state == HIGH && EnterPressed)
     {
       unsigned long dur = millis() - startPressTime;
-      isPressed = false;
+      EnterPressed = false;
       if (dur >= longPressLimit)
       {
+        exitGame();
+        RunOnce = false;
+      }
+      else
+      {
+
         if (inGameMenu)
         {
           if (currentGame == 9)
@@ -189,13 +201,29 @@ void loop()
           }
           return;
         }
-        exitGame();
-        RunOnce = false;
+
+        EnterButtonShortPressedGame = true;
       }
-      else
-      {
-        ButtonShortPressedGame = true;
-      }
+    }
+
+    if (UPButton_state == LOW && !UP_Pressed)
+    {
+      UP_Pressed = true;
+    }
+    else if (UPButton_state == HIGH && UP_Pressed)
+    {
+      UP_Pressed = false;
+      UPButtonShortPressedGame = true;
+    }
+
+    if (DOWNButton_state == LOW && !DOWN_Pressed)
+    {
+      DOWN_Pressed = true;
+    }
+    else if (DOWNButton_state == HIGH && DOWN_Pressed)
+    {
+      DOWN_Pressed = false;
+      DOWNButtonShortPressedGame = true;
     }
   }
 }
@@ -203,20 +231,38 @@ void loop()
 // ==================== MENU FUNCTIONS ====================
 void handleButtonPress()
 {
-  int button_state = digitalRead(Button);
-  if (button_state == LOW && !isPressed)
+  int Enterbutton_state = digitalRead(EnterButton);
+  int UPbutton_state = digitalRead(UPButton);
+  int DOWNbutton_state = digitalRead(DOWNButton);
+
+  if (UPbutton_state == LOW && !UP_Pressed)
   {
-    isPressed = true;
-    startPressTime = millis();
+    UP_Pressed = true;
+    item_selected = (item_selected - 1 + NUM_ITEMS) % NUM_ITEMS;
   }
-  if (button_state == HIGH && isPressed)
+  else if (UPbutton_state == HIGH && UP_Pressed)
   {
-    isPressed = false;
-    unsigned long dur = millis() - startPressTime;
-    if (dur >= longPressLimit)
-      launchGame(item_selected);
-    else
-      item_selected = (item_selected + 1) % NUM_ITEMS;
+    UP_Pressed = false;
+  }
+
+  if (DOWNbutton_state == LOW && !DOWN_Pressed)
+  {
+    DOWN_Pressed = true;
+    item_selected = (item_selected + 1) % NUM_ITEMS;
+  }
+  else if (DOWNbutton_state == HIGH && DOWN_Pressed)
+  {
+    DOWN_Pressed = false;
+  }
+
+  if (Enterbutton_state == LOW && !EnterPressed)
+  {
+    EnterPressed = true;
+  }
+  if (Enterbutton_state == HIGH && EnterPressed)
+  {
+    EnterPressed = false;
+    launchGame(item_selected);
   }
 }
 
@@ -499,9 +545,9 @@ void updateSnakeGame()
     return;
   lastSnakeMove = millis();
 
-  if (ButtonShortPressedGame)
+  if (UPButtonShortPressedGame)
   {
-    ButtonShortPressedGame = false;
+    UPButtonShortPressedGame = false;
     snakeDir = (snakeDir + 1) % 4;
   }
 
@@ -815,7 +861,7 @@ void updateDinoGame()
   int maxSpeed = 6 + (diff * 2);                 // 6 / 8 / 10
   int speedInterval = (diff == 2) ? 3000 : 5000; // Hard: makin cepat setiap 3 detik
 
-  int button_state = digitalRead(Button);
+  int button_state = digitalRead(UPButton);
   static bool buttonWasPressed = false;
 
   if (button_state == LOW && !buttonWasPressed)
@@ -940,8 +986,7 @@ void updateGeoDashGame()
   int diff = getDiff();
   int spacing = 60 - (diff * 10);
 
-  int button_state = digitalRead(Button);
-  if (button_state == LOW)
+  if (UPButtonShortPressedGame)
   {
     if (!cubeIsFlying)
     {
@@ -1036,9 +1081,9 @@ void showCredit()
     u8g2.clearBuffer();
     RunOnce = true;
   }
-  if (ButtonShortPressedGame)
+  if (EnterButtonShortPressedGame)
   {
-    ButtonShortPressedGame = false;
+    EnterButtonShortPressedGame = false;
     currentCreditIndex = (currentCreditIndex + 1) % totalCredits;
     u8g2.clearBuffer();
   }
@@ -1105,28 +1150,28 @@ void DrawSettingElement(int elementIndex)
 
 void toggleBrightnessSetting()
 {
-  if (!ButtonShortPressedGame)
+  if (!EnterButtonShortPressedGame)
     return;
 
-  ButtonShortPressedGame = false;
+  EnterButtonShortPressedGame = false;
   currentSettings.brightnessIndex = (currentSettings.brightnessIndex + 1) % 5;
   applySettings();
   buzzer.playOnceTone(1000, 50);
 }
 void toggleDifficultySetting()
 {
-  if (!ButtonShortPressedGame)
+  if (!EnterButtonShortPressedGame)
     return;
-  ButtonShortPressedGame = false;
+  EnterButtonShortPressedGame = false;
   currentSettings.difficultyIndex = (currentSettings.difficultyIndex + 1) % 3;
   applySettings();
   buzzer.playOnceTone(1000, 50);
 }
 void toggleSoundSetting()
 {
-  if (!ButtonShortPressedGame)
+  if (!EnterButtonShortPressedGame)
     return;
-  ButtonShortPressedGame = false;
+  EnterButtonShortPressedGame = false;
   currentSettings.volumeIndex = (currentSettings.volumeIndex + 1) % 5;
   applySettings();
 
@@ -1161,10 +1206,18 @@ void showSettings()
     return;
   }
 
-  if (ButtonShortPressedGame)
+  if (UPButtonShortPressedGame)
   {
-    ButtonShortPressedGame = false;
-    SelectedSetting = (SelectedSetting + 1) % NUM_SETTING_MENU;
+    UPButtonShortPressedGame = false;
+    SelectedSetting = (SelectedSetting - 1 + NUM_SETTING_MENU) % NUM_SETTING_MENU;
+    SETTING_Selected_outlineY = SelectedSetting * SETTING_ITEM_HEIGHT;
+    buzzer.playOnceTone(800, 50);
+  }
+
+  if (DOWNButtonShortPressedGame)
+  {
+    DOWNButtonShortPressedGame = false;
+    SelectedSetting = (SelectedSetting + 1 + NUM_SETTING_MENU) % NUM_SETTING_MENU;
     SETTING_Selected_outlineY = SelectedSetting * SETTING_ITEM_HEIGHT;
     buzzer.playOnceTone(800, 50);
   }
@@ -1309,15 +1362,31 @@ void IRClonning()
     case 1:
     {
       // Kirim saat tombol pendek
-      if (ButtonShortPressedGame)
+      if (EnterButtonShortPressedGame)
       {
-        ButtonShortPressedGame = false;
+        EnterButtonShortPressedGame = false;
         IRSendResult res = irManager.send();
         if (res == IR_SEND_OK)
           buzzer.playOnceTone(1000, 150); // feedback: terkirim
         else
           buzzer.playOnceTone(400, 300); // feedback: kosong
         CaptureStartTime = millis();     // reset timer teks
+      }
+
+      if (UPButtonShortPressedGame)
+      {
+        UPButtonShortPressedGame = false;
+        irManager.previousSlot();
+        buzzer.playOnceTone(800, 50);
+        CaptureStartTime = millis(); // reset timer teks
+      }
+
+      if (DOWNButtonShortPressedGame)
+      {
+        DOWNButtonShortPressedGame = false;
+        irManager.nextSlot();
+        buzzer.playOnceTone(800, 50);
+        CaptureStartTime = millis(); // reset timer teks
       }
 
       // Render: animasi + teks status
@@ -1340,7 +1409,9 @@ void IRClonning()
 
         snprintf(line1, sizeof(line1), "%s",
                  irManager.describeSelected().c_str());
-        snprintf(line2, sizeof(line2), "Press = Send");
+        // Tampilkan slot irManager saat ini, dan instruksi untuk mengirim
+        snprintf(line2, sizeof(line2), "Slot %s Enter : send",
+                 irManager.slotLabel().c_str());
         unsigned long elapsed = millis() - CaptureStartTime;
         int dots = (elapsed / 400) % 4;
         char sending[20];
@@ -1366,9 +1437,11 @@ void IRClonning()
   }
 
   // ── Menu navigasi IR (Capture / Send) ────────────────────
-  if (ButtonShortPressedGame)
+
+  if (UPButtonShortPressedGame || DOWNButtonShortPressedGame)
   {
-    ButtonShortPressedGame = false;
+    UPButtonShortPressedGame = false;
+    DOWNButtonShortPressedGame = false;
     SelectedIrMenu = (SelectedIrMenu + 1) % NUM_IR_MENU;
     IR_MENU_Selected_outlineY = SelectedIrMenu * IR_MENU_ITEM_HEIGHT;
     buzzer.playOnceTone(800, 50);

@@ -12,7 +12,7 @@
 #include <IRutils.h>
 
 // ===== Storage limits =====
-#define IR_MAX_SIGNALS 1
+#define IR_MAX_SIGNALS 5
 #define IR_MAX_RAW_LEN 200
 
 // ============================================================
@@ -125,6 +125,15 @@ public:
         if (_count > 1)
         {
             _selectedIdx = (_selectedIdx + 1) % _count;
+            Serial.printf("[IR] Slot → #%d\n", _selectedIdx + 1);
+        }
+    }
+
+    void previousSlot()
+    {
+        if (_count > 1)
+        {
+            _selectedIdx = (_selectedIdx - 1 + _count) % _count;
             Serial.printf("[IR] Slot → #%d\n", _selectedIdx + 1);
         }
     }

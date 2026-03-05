@@ -10,12 +10,21 @@ bool inGame = false;
 int currentGame = -1;
 bool inGameMenu = false;
 
-const int Button = 14;
-bool isPressed = false;
+const int EnterButton = 25;
+const int UPButton = 14;
+const int DOWNButton = 12;
+
+bool EnterPressed = false;
+bool UP_Pressed = false;
+bool DOWN_Pressed = false;
+
 unsigned long startPressTime = 0;
 const unsigned long longPressLimit = 800;
 
-bool ButtonShortPressedGame = false;
+bool EnterButtonShortPressedGame = false;
+bool UPButtonShortPressedGame = false;
+bool DOWNButtonShortPressedGame = false;
+
 bool RunOnce = false;
 
 const int BUZZER_PIN = 32;
