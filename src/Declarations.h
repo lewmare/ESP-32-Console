@@ -6,6 +6,7 @@ void drawMenu();
 void handleButtonPress();
 void launchGame(int gameIndex);
 void exitGame();
+void ToSubMenu();
 
 void initCarObstacleGame();
 void updateCarObstacleGame();

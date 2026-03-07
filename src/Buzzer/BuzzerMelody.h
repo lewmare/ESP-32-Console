@@ -6,4 +6,7 @@
 const int melody_Startup[] = {NOTE_E5, NOTE_G5, NOTE_C6, NOTE_E6};
 const int duration_Startup[] = {120, 120, 180, 300};
 
+const int melody_exitGame[]{NOTE_A5, NOTE_E5};
+const int duration_exitGame[]{60, 120};
+
 #endif

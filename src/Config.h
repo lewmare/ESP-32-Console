@@ -8,9 +8,8 @@ int item_sel_previous;
 int item_sel_next;
 bool inGame = false;
 int currentGame = -1;
-bool inGameMenu = false;
 
-const int EnterButton = 25;
+const int EnterButton = 33;
 const int UPButton = 14;
 const int DOWNButton = 12;
 
@@ -35,6 +34,21 @@ const int Buzzer_Channel = 0;
 float mpuOffsetX = 0;
 float mpuOffsetY = 0;
 
+// ======= FOR DOUBLE SETTING FITUR
+enum Condition
+{
+    MAIN_MENU,
+    SUB_MENU,
+    ON_ELEMENT
+};
+
+Condition currentCondition = MAIN_MENU;
+
+void ToggleCondition(Condition newCondition)
+{
+    currentCondition = newCondition;
+}
+
 // ===================== SETTING VARIABLES =====================
 int brightnessLevel = 1;
 int difficultyLevel = 0;
@@ -42,7 +56,6 @@ int volumeLevel = 2;
 int SelectedSetting = 0;
 const int SETTING_ITEM_HEIGHT = 21;
 int SETTING_Selected_outlineY = 0;
-bool onSettingElement = false;
 
 struct Settings
 {
@@ -69,7 +82,6 @@ const char *settingNames[3] = {"Brightness", "Difficulty", "Volume"};
 
 bool codeSaved = false;
 bool captureMode = false;
-bool onIrMenu = false;
 
 const int NUM_IR_MENU = 2;
 

@@ -183,24 +183,18 @@ void loop()
       EnterPressed = false;
       if (dur >= longPressLimit)
       {
-        exitGame();
-        RunOnce = false;
+        if (currentCondition == ON_ELEMENT)
+        {
+          ToSubMenu();
+        }
+        else
+        {
+          exitGame();
+          RunOnce = false;
+        }
       }
       else
       {
-
-        if (inGameMenu)
-        {
-          if (currentGame == 9)
-          {
-            launchSelectedSetting();
-          }
-          else if (currentGame == 7)
-          {
-            launchSelectedIrMenu();
-          }
-          return;
-        }
 
         EnterButtonShortPressedGame = true;
       }
@@ -209,21 +203,23 @@ void loop()
     if (UPButton_state == LOW && !UP_Pressed)
     {
       UP_Pressed = true;
+      UPButtonShortPressedGame = true;
     }
     else if (UPButton_state == HIGH && UP_Pressed)
     {
       UP_Pressed = false;
-      UPButtonShortPressedGame = true;
+      UPButtonShortPressedGame = false;
     }
 
     if (DOWNButton_state == LOW && !DOWN_Pressed)
     {
       DOWN_Pressed = true;
+      DOWNButtonShortPressedGame = true;
     }
     else if (DOWNButton_state == HIGH && DOWN_Pressed)
     {
       DOWN_Pressed = false;
-      DOWNButtonShortPressedGame = true;
+      DOWNButtonShortPressedGame = false;
     }
   }
 }
@@ -320,11 +316,10 @@ void launchGame(int gameIndex)
     initGeoDashGame();
     break;
   case 7:
-    inGameMenu = true;
-
+    ToSubMenu();
     break;
   case 9:
-    inGameMenu = true;
+    ToSubMenu();
     break;
   }
   buzzer.playOnceTone(1000, 100);
@@ -333,9 +328,7 @@ void launchGame(int gameIndex)
 void exitGame()
 {
   inGame = false;
-  onSettingElement = false;
-  inGameMenu = false;
-  onIrMenu = false;
+  ToggleCondition(MAIN_MENU);
   currentGame = -1;
   SelectedSetting = 0;
   SETTING_Selected_outlineY = 0;
@@ -343,7 +336,13 @@ void exitGame()
   wifiScanState = WIFI_IDLE;
   lastWifiScan = 0;
   WiFi.scanDelete();
-  buzzer.playOnceTone(400, 200);
+  buzzer.play(melody_exitGame, duration_exitGame, sizeof(melody_exitGame) / sizeof(melody_exitGame[0]));
+}
+
+void ToSubMenu()
+{
+  ToggleCondition(SUB_MENU);
+  buzzer.play(melody_exitGame, duration_exitGame, sizeof(melody_exitGame) / sizeof(melody_exitGame[0]));
 }
 
 // ==================== PING PONG GAME ====================
@@ -541,15 +540,17 @@ void initSnakeGame()
 
 void updateSnakeGame()
 {
-  if (millis() - lastSnakeMove < (unsigned long)SNAKE_SPEED)
-    return;
-  lastSnakeMove = millis();
 
   if (UPButtonShortPressedGame)
   {
     UPButtonShortPressedGame = false;
+    Serial.println("Snake: UP Pressed");
     snakeDir = (snakeDir + 1) % 4;
   }
+
+  if (millis() - lastSnakeMove < (unsigned long)SNAKE_SPEED)
+    return;
+  lastSnakeMove = millis();
 
   for (int i = snakeLength - 1; i > 0; i--)
     snake[i] = snake[i - 1];
@@ -861,10 +862,7 @@ void updateDinoGame()
   int maxSpeed = 6 + (diff * 2);                 // 6 / 8 / 10
   int speedInterval = (diff == 2) ? 3000 : 5000; // Hard: makin cepat setiap 3 detik
 
-  int button_state = digitalRead(UPButton);
-  static bool buttonWasPressed = false;
-
-  if (button_state == LOW && !buttonWasPressed)
+  if (UPButtonShortPressedGame)
   {
     if (!isJumping)
     {
@@ -873,16 +871,14 @@ void updateDinoGame()
       isDiving = false;
       buzzer.playOnceTone(1000, 50);
     }
-    else if (!isDiving)
-    {
-      dinoVelY = DIVE_SPEED;
-      isDiving = true;
-      buzzer.playOnceTone(600, 50);
-    }
-    buttonWasPressed = true;
   }
-  if (button_state == HIGH)
-    buttonWasPressed = false;
+
+  if (DOWNButtonShortPressedGame && isJumping && !isDiving)
+  {
+    dinoVelY = DIVE_SPEED;
+    isDiving = true;
+    buzzer.playOnceTone(600, 50);
+  }
 
   dinoVelY = isDiving ? DIVE_SPEED : dinoVelY + GRAVITY;
   dinoY += dinoVelY;
@@ -1081,12 +1077,21 @@ void showCredit()
     u8g2.clearBuffer();
     RunOnce = true;
   }
-  if (EnterButtonShortPressedGame)
+
+  if (UPButtonShortPressedGame)
   {
-    EnterButtonShortPressedGame = false;
+    UPButtonShortPressedGame = false;
+    currentCreditIndex = (currentCreditIndex - 1 + totalCredits) % totalCredits;
+    u8g2.clearBuffer();
+  }
+
+  if (DOWNButtonShortPressedGame)
+  {
+    DOWNButtonShortPressedGame = false;
     currentCreditIndex = (currentCreditIndex + 1) % totalCredits;
     u8g2.clearBuffer();
   }
+
   int CenterName = FindCenterX(u8g2.getStrWidth(credits[currentCreditIndex].name));
   u8g2.setFont(u8g2_font_7x14B_mf);
   u8g2.drawStr(5, 15, credits[currentCreditIndex].role);
@@ -1150,30 +1155,57 @@ void DrawSettingElement(int elementIndex)
 
 void toggleBrightnessSetting()
 {
-  if (!EnterButtonShortPressedGame)
+
+  if (UPButtonShortPressedGame)
+  {
+    UPButtonShortPressedGame = false;
+    currentSettings.brightnessIndex = (currentSettings.brightnessIndex - 1 + 5) % 5;
+  }
+  else if (DOWNButtonShortPressedGame)
+  {
+    DOWNButtonShortPressedGame = false;
+    currentSettings.brightnessIndex = (currentSettings.brightnessIndex + 1) % 5;
+  }
+
+  if (!UPButtonShortPressedGame || !DOWNButtonShortPressedGame) // Cegah suara saat masuk menu setting
     return;
 
-  EnterButtonShortPressedGame = false;
-  currentSettings.brightnessIndex = (currentSettings.brightnessIndex + 1) % 5;
-  applySettings();
   buzzer.playOnceTone(1000, 50);
 }
 void toggleDifficultySetting()
 {
-  if (!EnterButtonShortPressedGame)
+  if (UPButtonShortPressedGame)
+  {
+    UPButtonShortPressedGame = false;
+    currentSettings.difficultyIndex = (currentSettings.difficultyIndex - 1 + 3) % 3;
+  }
+  else if (DOWNButtonShortPressedGame)
+  {
+    DOWNButtonShortPressedGame = false;
+    currentSettings.difficultyIndex = (currentSettings.difficultyIndex + 1) % 3;
+  }
+
+  if (!UPButtonShortPressedGame || !DOWNButtonShortPressedGame) // Cegah suara saat masuk menu settingif (!UPButtonShortPressedGame || !DOWNButtonShortPressedGame) // Cegah suara saat masuk menu setting
     return;
-  EnterButtonShortPressedGame = false;
-  currentSettings.difficultyIndex = (currentSettings.difficultyIndex + 1) % 3;
-  applySettings();
+
   buzzer.playOnceTone(1000, 50);
 }
 void toggleSoundSetting()
 {
-  if (!EnterButtonShortPressedGame)
+
+  if (UPButtonShortPressedGame)
+  {
+    UPButtonShortPressedGame = false;
+    currentSettings.volumeIndex = (currentSettings.volumeIndex - 1 + 5) % 5;
+  }
+  else if (DOWNButtonShortPressedGame)
+  {
+    DOWNButtonShortPressedGame = false;
+    currentSettings.volumeIndex = (currentSettings.volumeIndex + 1) % 5;
+  }
+
+  if (!UPButtonShortPressedGame || !DOWNButtonShortPressedGame) // Cegah suara saat masuk menu setting
     return;
-  EnterButtonShortPressedGame = false;
-  currentSettings.volumeIndex = (currentSettings.volumeIndex + 1) % 5;
-  applySettings();
 
   if (VolumeLevelValues[currentSettings.volumeIndex] > 0)
     buzzer.playOnceTone(NOTE_G5, 80);
@@ -1181,14 +1213,13 @@ void toggleSoundSetting()
 
 void launchSelectedSetting()
 {
-  inGameMenu = false;
-  onSettingElement = true;
+  currentCondition = ON_ELEMENT;
   buzzer.playOnceTone(1200, 100);
 }
 
 void showSettings()
 {
-  if (onSettingElement)
+  if (currentCondition == ON_ELEMENT)
   {
     DrawSettingElement(SelectedSetting);
     switch (SelectedSetting)
@@ -1203,48 +1234,60 @@ void showSettings()
       toggleSoundSetting();
       break;
     }
+
+    applySettings();
     return;
   }
-
-  if (UPButtonShortPressedGame)
+  else
   {
-    UPButtonShortPressedGame = false;
-    SelectedSetting = (SelectedSetting - 1 + NUM_SETTING_MENU) % NUM_SETTING_MENU;
-    SETTING_Selected_outlineY = SelectedSetting * SETTING_ITEM_HEIGHT;
-    buzzer.playOnceTone(800, 50);
+
+    if (EnterButtonShortPressedGame)
+    {
+      EnterButtonShortPressedGame = false;
+      launchSelectedSetting();
+      return;
+    }
+
+    if (UPButtonShortPressedGame)
+    {
+      UPButtonShortPressedGame = false;
+      SelectedSetting = (SelectedSetting - 1 + NUM_SETTING_MENU) % NUM_SETTING_MENU;
+      SETTING_Selected_outlineY = SelectedSetting * SETTING_ITEM_HEIGHT;
+      buzzer.playOnceTone(800, 50);
+    }
+
+    if (DOWNButtonShortPressedGame)
+    {
+      DOWNButtonShortPressedGame = false;
+      SelectedSetting = (SelectedSetting + 1 + NUM_SETTING_MENU) % NUM_SETTING_MENU;
+      SETTING_Selected_outlineY = SelectedSetting * SETTING_ITEM_HEIGHT;
+      buzzer.playOnceTone(800, 50);
+    }
+
+    u8g2.firstPage();
+    do
+    {
+      u8g2.drawBitmap(0, SETTING_Selected_outlineY, 128 / 8, 21, second_menu_bitmap__Icon_selectedOutline);
+
+      u8g2.setDrawColor(SelectedSetting == 0 ? 0 : 1);
+      u8g2.setFont(SelectedSetting == 0 ? u8g2_font_7x14B_mf : u8g2_font_7x14_mf);
+      u8g2.drawStr(27, 16, setting_menu_bitmap_allArray_names[0]);
+      u8g2.setDrawColor(1);
+      u8g2.drawBitmap(3, 2, 2, 16, setting_menu_bitmap_allArray[0]);
+
+      u8g2.setDrawColor(SelectedSetting == 1 ? 0 : 1);
+      u8g2.setFont(SelectedSetting == 1 ? u8g2_font_7x14B_mf : u8g2_font_7x14_mf);
+      u8g2.drawStr(27, 38, setting_menu_bitmap_allArray_names[1]);
+      u8g2.setDrawColor(1);
+      u8g2.drawBitmap(3, 24, 2, 16, setting_menu_bitmap_allArray[1]);
+
+      u8g2.setDrawColor(SelectedSetting == 2 ? 0 : 1);
+      u8g2.setFont(SelectedSetting == 2 ? u8g2_font_7x14B_mf : u8g2_font_7x14_mf);
+      u8g2.drawStr(27, 58, setting_menu_bitmap_allArray_names[2]);
+      u8g2.setDrawColor(1);
+      u8g2.drawBitmap(3, 46, 2, 16, setting_menu_bitmap_allArray[2]);
+    } while (u8g2.nextPage());
   }
-
-  if (DOWNButtonShortPressedGame)
-  {
-    DOWNButtonShortPressedGame = false;
-    SelectedSetting = (SelectedSetting + 1 + NUM_SETTING_MENU) % NUM_SETTING_MENU;
-    SETTING_Selected_outlineY = SelectedSetting * SETTING_ITEM_HEIGHT;
-    buzzer.playOnceTone(800, 50);
-  }
-
-  u8g2.firstPage();
-  do
-  {
-    u8g2.drawBitmap(0, SETTING_Selected_outlineY, 128 / 8, 21, second_menu_bitmap__Icon_selectedOutline);
-
-    u8g2.setDrawColor(SelectedSetting == 0 ? 0 : 1);
-    u8g2.setFont(SelectedSetting == 0 ? u8g2_font_7x14B_mf : u8g2_font_7x14_mf);
-    u8g2.drawStr(27, 16, setting_menu_bitmap_allArray_names[0]);
-    u8g2.setDrawColor(1);
-    u8g2.drawBitmap(3, 2, 2, 16, setting_menu_bitmap_allArray[0]);
-
-    u8g2.setDrawColor(SelectedSetting == 1 ? 0 : 1);
-    u8g2.setFont(SelectedSetting == 1 ? u8g2_font_7x14B_mf : u8g2_font_7x14_mf);
-    u8g2.drawStr(27, 38, setting_menu_bitmap_allArray_names[1]);
-    u8g2.setDrawColor(1);
-    u8g2.drawBitmap(3, 24, 2, 16, setting_menu_bitmap_allArray[1]);
-
-    u8g2.setDrawColor(SelectedSetting == 2 ? 0 : 1);
-    u8g2.setFont(SelectedSetting == 2 ? u8g2_font_7x14B_mf : u8g2_font_7x14_mf);
-    u8g2.drawStr(27, 58, setting_menu_bitmap_allArray_names[2]);
-    u8g2.setDrawColor(1);
-    u8g2.drawBitmap(3, 46, 2, 16, setting_menu_bitmap_allArray[2]);
-  } while (u8g2.nextPage());
 }
 
 void DrawIrMenuElement(int elementIndex)
@@ -1292,15 +1335,14 @@ void DrawIrMenuElement(int elementIndex)
 
 void launchSelectedIrMenu()
 {
-  inGameMenu = false;
-  onIrMenu = true;
+  currentCondition = ON_ELEMENT;
   buzzer.playOnceTone(1200, 100);
 }
 
 void IRClonning()
 {
   // ── Sub-menu: Capture / Send ──────────────────────────────
-  if (onIrMenu)
+  if (currentCondition == ON_ELEMENT)
   {
     switch (SelectedIrMenu)
     {
@@ -1437,6 +1479,13 @@ void IRClonning()
   }
 
   // ── Menu navigasi IR (Capture / Send) ────────────────────
+
+  if (EnterButtonShortPressedGame)
+  {
+    EnterButtonShortPressedGame = false;
+    launchSelectedIrMenu();
+    return;
+  }
 
   if (UPButtonShortPressedGame || DOWNButtonShortPressedGame)
   {
