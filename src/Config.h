@@ -9,7 +9,7 @@ int item_sel_next;
 bool inGame = false;
 int currentGame = -1;
 
-const int EnterButton = 33;
+const int EnterButton = 19;
 const int UPButton = 14;
 const int DOWNButton = 12;
 
