@@ -1446,12 +1446,12 @@ void IRClonning()
       else
       {
         // Tampilkan info sinyal + instruksi
-        char line1[24];
-        char line2[20];
+        char line1[20];
+        char line2[24];
 
         snprintf(line1, sizeof(line1), "%s",
                  irManager.describeSelected().c_str());
-        // Tampilkan slot irManager saat ini, dan instruksi untuk mengirim
+        // Tampilkan slot irManager saat ini, dan instruksi untuk mengirim;
         snprintf(line2, sizeof(line2), "Slot %s Enter : send",
                  irManager.slotLabel().c_str());
         unsigned long elapsed = millis() - CaptureStartTime;
@@ -1462,8 +1462,11 @@ void IRClonning()
                                : dots == 2   ? "..."
                                              : "....");
         int cx1 = FindCenterX(u8g2.getStrWidth(line1));
-        int cx2 = FindCenterX(u8g2.getStrWidth(line2));
         u8g2.drawStr(cx1, 54, line1);
+
+        u8g2.setFont(u8g2_font_4x6_tf);
+
+        int cx2 = FindCenterX(u8g2.getStrWidth(line2));
         u8g2.drawStr(cx2, 63, line2);
       }
 
