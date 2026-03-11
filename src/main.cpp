@@ -195,8 +195,10 @@ void loop()
       }
       else
       {
-
-        EnterButtonShortPressedGame = true;
+        if (currentCondition != ON_ELEMENT)
+        {
+          EnterButtonShortPressedGame = true;
+        }
       }
     }
 
