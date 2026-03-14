@@ -43,4 +43,6 @@ void showSettings();
 void launchSelectedSetting();
 void applySettings();
 
+void PlaySettingTone();
+
 #endif

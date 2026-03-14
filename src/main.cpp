@@ -93,9 +93,6 @@ void setup()
   Serial.println("Gaming Console Started!");
 }
 
-// Startup Variables
-unsigned long startupStartTime = 2000;
-
 // ==================== MAIN LOOP ====================
 void loop()
 {
@@ -1157,60 +1154,85 @@ void DrawSettingElement(int elementIndex)
 
 void toggleBrightnessSetting()
 {
-
-  if (UPButtonShortPressedGame)
+  if (UPButtonShortPressedGame || DOWNButtonShortPressedGame)
   {
-    UPButtonShortPressedGame = false;
-    currentSettings.brightnessIndex = (currentSettings.brightnessIndex - 1 + 5) % 5;
-  }
-  else if (DOWNButtonShortPressedGame)
-  {
-    DOWNButtonShortPressedGame = false;
-    currentSettings.brightnessIndex = (currentSettings.brightnessIndex + 1) % 5;
-  }
+    if (UPButtonShortPressedGame)
+    {
+      UPButtonShortPressedGame = false;
+      currentSettings.brightnessIndex = (currentSettings.brightnessIndex - 1 + 5) % 5;
+    }
+    else if (DOWNButtonShortPressedGame)
+    {
+      DOWNButtonShortPressedGame = false;
+      currentSettings.brightnessIndex = (currentSettings.brightnessIndex + 1) % 5;
+    }
 
-  if (!UPButtonShortPressedGame || !DOWNButtonShortPressedGame) // Cegah suara saat masuk menu setting
-    return;
-
-  buzzer.playOnceTone(1000, 50);
+    PlaySettingTone();
+  }
 }
 void toggleDifficultySetting()
 {
-  if (UPButtonShortPressedGame)
-  {
-    UPButtonShortPressedGame = false;
-    currentSettings.difficultyIndex = (currentSettings.difficultyIndex - 1 + 3) % 3;
-  }
-  else if (DOWNButtonShortPressedGame)
-  {
-    DOWNButtonShortPressedGame = false;
-    currentSettings.difficultyIndex = (currentSettings.difficultyIndex + 1) % 3;
-  }
 
-  if (!UPButtonShortPressedGame || !DOWNButtonShortPressedGame) // Cegah suara saat masuk menu settingif (!UPButtonShortPressedGame || !DOWNButtonShortPressedGame) // Cegah suara saat masuk menu setting
-    return;
+  if (UPButtonShortPressedGame || DOWNButtonShortPressedGame)
+  {
+    if (UPButtonShortPressedGame)
+    {
+      UPButtonShortPressedGame = false;
+      currentSettings.difficultyIndex = (currentSettings.difficultyIndex - 1 + 3) % 3;
+    }
+    else if (DOWNButtonShortPressedGame)
+    {
+      DOWNButtonShortPressedGame = false;
+      currentSettings.difficultyIndex = (currentSettings.difficultyIndex + 1) % 3;
+    }
 
-  buzzer.playOnceTone(1000, 50);
+    PlaySettingTone();
+  }
 }
 void toggleSoundSetting()
 {
 
-  if (UPButtonShortPressedGame)
+  if (UPButtonShortPressedGame || DOWNButtonShortPressedGame)
   {
-    UPButtonShortPressedGame = false;
-    currentSettings.volumeIndex = (currentSettings.volumeIndex - 1 + 5) % 5;
+    if (UPButtonShortPressedGame)
+    {
+      UPButtonShortPressedGame = false;
+      currentSettings.volumeIndex = (currentSettings.volumeIndex - 1 + 5) % 5;
+    }
+    else if (DOWNButtonShortPressedGame)
+    {
+      DOWNButtonShortPressedGame = false;
+      currentSettings.volumeIndex = (currentSettings.volumeIndex + 1) % 5;
+    }
+
+    PlaySettingTone();
   }
-  else if (DOWNButtonShortPressedGame)
+}
+
+void PlaySettingTone()
+{
+  switch (SelectedSetting)
   {
-    DOWNButtonShortPressedGame = false;
-    currentSettings.volumeIndex = (currentSettings.volumeIndex + 1) % 5;
+  case 0:
+    buzzer.playOnceTone(currentSettings.brightnessIndex == 0 ? NOTE_E5 : currentSettings.brightnessIndex == 1 ? NOTE_F5
+                                                                     : currentSettings.brightnessIndex == 2   ? NOTE_G5
+                                                                     : currentSettings.brightnessIndex == 3   ? NOTE_A5
+                                                                     : currentSettings.brightnessIndex == 4   ? NOTE_B5
+                                                                                                              : NOTE_C6,
+                        80);
+    break;
+  case 1:
+
+    buzzer.playOnceTone(currentSettings.difficultyIndex == 0 ? NOTE_E5 : currentSettings.difficultyIndex == 1 ? NOTE_F5
+                                                                                                              : NOTE_G5,
+                        80);
+
+    break;
+  case 2:
+    if (VolumeLevelValues[currentSettings.volumeIndex] > 0)
+      buzzer.playOnceTone(NOTE_G5, 80);
+    break;
   }
-
-  if (!UPButtonShortPressedGame || !DOWNButtonShortPressedGame) // Cegah suara saat masuk menu setting
-    return;
-
-  if (VolumeLevelValues[currentSettings.volumeIndex] > 0)
-    buzzer.playOnceTone(NOTE_G5, 80);
 }
 
 void launchSelectedSetting()

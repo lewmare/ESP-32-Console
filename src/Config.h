@@ -49,6 +49,9 @@ void ToggleCondition(Condition newCondition)
     currentCondition = newCondition;
 }
 
+// Startup Variables
+unsigned long startupStartTime = 2000;
+
 // ===================== SETTING VARIABLES =====================
 int brightnessLevel = 1;
 int difficultyLevel = 0;
