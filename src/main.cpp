@@ -1107,49 +1107,6 @@ void showCredit()
   u8g2.sendBuffer();
 }
 
-void DrawIrMenuElement(int elementIndex)
-{
-  u8g2.clearBuffer();
-  switch (elementIndex)
-  {
-  case 0:
-  {
-    IRCaptureAnim.update();
-    IRCaptureAnim.draw(u8g2);
-
-    unsigned long elapsed = millis() - CaptureStartTime;
-    int dots = (elapsed / 400) % 4; // 0..3 titik bergantian
-    char CaptureMsg[20];
-    snprintf(CaptureMsg, sizeof(CaptureMsg), "Capturing%s",
-             dots == 0 ? "." : dots == 1 ? ".."
-                           : dots == 2   ? "..."
-                                         : "....");
-    u8g2.setFont(u8g2_font_5x8_tf);
-    int cx = FindCenterX(u8g2.getStrWidth(CaptureMsg));
-    u8g2.drawStr(cx, 54, CaptureMsg);
-    break;
-  }
-  case 1:
-  {
-    IRSendingAnim.update();
-    IRSendingAnim.draw(u8g2);
-
-    unsigned long elapsed = millis() - CaptureStartTime;
-    int dots = (elapsed / 400) % 4; // 0..3 titik bergantian
-    char CaptureMsg[20];
-    snprintf(CaptureMsg, sizeof(CaptureMsg), "Sending%s",
-             dots == 0 ? "." : dots == 1 ? ".."
-                           : dots == 2   ? "..."
-                                         : "....");
-    u8g2.setFont(u8g2_font_5x8_tf);
-    int cx = FindCenterX(u8g2.getStrWidth(CaptureMsg));
-    u8g2.drawStr(cx, 54, CaptureMsg);
-    break;
-  }
-  }
-  u8g2.sendBuffer();
-}
-
 // ==================== SETTING =========================
 
 void applySettings()
@@ -1547,4 +1504,47 @@ void IRClonning()
     u8g2.drawBitmap(3, 24, 2, 16, setting_menu_bitmap_allArray[1]);
 
   } while (u8g2.nextPage());
+}
+
+void DrawIrMenuElement(int elementIndex)
+{
+  u8g2.clearBuffer();
+  switch (elementIndex)
+  {
+  case 0:
+  {
+    IRCaptureAnim.update();
+    IRCaptureAnim.draw(u8g2);
+
+    unsigned long elapsed = millis() - CaptureStartTime;
+    int dots = (elapsed / 400) % 4; // 0..3 titik bergantian
+    char CaptureMsg[20];
+    snprintf(CaptureMsg, sizeof(CaptureMsg), "Capturing%s",
+             dots == 0 ? "." : dots == 1 ? ".."
+                           : dots == 2   ? "..."
+                                         : "....");
+    u8g2.setFont(u8g2_font_5x8_tf);
+    int cx = FindCenterX(u8g2.getStrWidth(CaptureMsg));
+    u8g2.drawStr(cx, 54, CaptureMsg);
+    break;
+  }
+  case 1:
+  {
+    IRSendingAnim.update();
+    IRSendingAnim.draw(u8g2);
+
+    unsigned long elapsed = millis() - CaptureStartTime;
+    int dots = (elapsed / 400) % 4; // 0..3 titik bergantian
+    char CaptureMsg[20];
+    snprintf(CaptureMsg, sizeof(CaptureMsg), "Sending%s",
+             dots == 0 ? "." : dots == 1 ? ".."
+                           : dots == 2   ? "..."
+                                         : "....");
+    u8g2.setFont(u8g2_font_5x8_tf);
+    int cx = FindCenterX(u8g2.getStrWidth(CaptureMsg));
+    u8g2.drawStr(cx, 54, CaptureMsg);
+    break;
+  }
+  }
+  u8g2.sendBuffer();
 }

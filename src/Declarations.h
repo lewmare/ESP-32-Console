@@ -37,7 +37,7 @@ void drawGeoDashGame();
 void IRClonning();
 void launchSelectedIrMenu();
 
-void DrawIrMenuElement();
+void DrawIrMenuElement(int elementIndex);
 
 void showCredit();
 
