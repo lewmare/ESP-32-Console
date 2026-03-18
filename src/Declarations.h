@@ -37,11 +37,16 @@ void drawGeoDashGame();
 void IRClonning();
 void launchSelectedIrMenu();
 
+void DrawIrMenuElement();
+
 void showCredit();
 
 void showSettings();
 void launchSelectedSetting();
 void applySettings();
+
+void DrawSettingMenu();
+void DrawSettingElement(int elementIndex);
 
 void PlaySettingTone();
 

@@ -53,9 +53,6 @@ void ToggleCondition(Condition newCondition)
 unsigned long startupStartTime = 2000;
 
 // ===================== SETTING VARIABLES =====================
-int brightnessLevel = 1;
-int difficultyLevel = 0;
-int volumeLevel = 2;
 int SelectedSetting = 0;
 const int SETTING_ITEM_HEIGHT = 21;
 int SETTING_Selected_outlineY = 0;
@@ -250,5 +247,12 @@ Credit credits[] = {
     {"Social Media", "@akhdn.v"},
     {"Special Thanks", "You, the player!"}};
 int totalCredits = sizeof(credits) / sizeof(credits[0]);
+
+// ==================== HELPER FUNCTIONS ====================
+
+int FindCenterX(int Objwidth, int Width = SCREEN_WIDTH)
+{
+    return (Width - Objwidth) / 2;
+}
 
 #endif

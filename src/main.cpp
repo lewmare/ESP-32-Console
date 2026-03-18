@@ -5,9 +5,17 @@
 #include <Adafruit_Sensor.h>
 #include <WiFi.h>
 
-#include "IR_Clone.h"
+// ==================== STORAGE MANAGER=====================
+
+#include "StorageManager.h"
+
+SettingsManager settingsMgr;
+
+// ===================== SETTING SETUP =====================
 
 // ==================== IR SETUP =========================
+#include "IR_Clone.h"
+
 IRManager irManager;
 
 // ==================== INISIALISASI ====================
@@ -33,18 +41,20 @@ BitmapAnim IRSendingAnim;
 
 BuzzerEngine buzzer;
 
-// ==================== HELPER FUNCTIONS ====================
-
-int FindCenterX(int Objwidth, int Width = SCREEN_WIDTH)
-{
-  return (Width - Objwidth) / 2;
-}
-
 // ==================== SETUP ====================
 void setup()
 {
   Wire.begin(21, 22);
   Serial.begin(921600);
+
+  settingsMgr.begin();
+
+  currentSettings.brightnessIndex = settingsMgr.getBrightness();
+  currentSettings.difficultyIndex = settingsMgr.getDifficulty();
+  currentSettings.volumeIndex = settingsMgr.getVolume();
+
+  applySettings();
+
   pinMode(BUZZER_PIN, OUTPUT);
 
   pinMode(EnterButton, INPUT_PULLUP);
@@ -80,11 +90,6 @@ void setup()
   IRCaptureAnim.init((const uint8_t *)IR_WAITINGCAPTURE_frames, 32, 32, IR_WAITINGCAPTURE_frames_COUNT, 21, 48, 8, ANIM_LOOP, ANIM_DIR_H, true, ANIM_MSB);
   IRSendingAnim.init((const uint8_t *)IR_SENDING_frames, 32, 32, IR_SENDING_frames_COUNT, 21, 48, 8, ANIM_LOOP, ANIM_DIR_H, true, ANIM_MSB);
 
-  currentSettings.brightnessIndex = brightnessLevel;
-  currentSettings.difficultyIndex = difficultyLevel;
-  currentSettings.volumeIndex = volumeLevel;
-  applySettings();
-
   buzzer.init(BUZZER_PIN);
   buzzer.play(melody_Startup, duration_Startup, sizeof(melody_Startup) / sizeof(melody_Startup[0]));
 
@@ -114,6 +119,8 @@ void loop()
     StartupAnim.draw(u8g2); // draw() gantikan render()
     u8g2.drawStr(20, 61, scanMsg);
     u8g2.sendBuffer();
+
+    settingsMgr.printSettingsSummary();
     return;
   }
 
@@ -1100,7 +1107,51 @@ void showCredit()
   u8g2.sendBuffer();
 }
 
-// ==================== SETTINGS FUNCTIONS ====================
+void DrawIrMenuElement(int elementIndex)
+{
+  u8g2.clearBuffer();
+  switch (elementIndex)
+  {
+  case 0:
+  {
+    IRCaptureAnim.update();
+    IRCaptureAnim.draw(u8g2);
+
+    unsigned long elapsed = millis() - CaptureStartTime;
+    int dots = (elapsed / 400) % 4; // 0..3 titik bergantian
+    char CaptureMsg[20];
+    snprintf(CaptureMsg, sizeof(CaptureMsg), "Capturing%s",
+             dots == 0 ? "." : dots == 1 ? ".."
+                           : dots == 2   ? "..."
+                                         : "....");
+    u8g2.setFont(u8g2_font_5x8_tf);
+    int cx = FindCenterX(u8g2.getStrWidth(CaptureMsg));
+    u8g2.drawStr(cx, 54, CaptureMsg);
+    break;
+  }
+  case 1:
+  {
+    IRSendingAnim.update();
+    IRSendingAnim.draw(u8g2);
+
+    unsigned long elapsed = millis() - CaptureStartTime;
+    int dots = (elapsed / 400) % 4; // 0..3 titik bergantian
+    char CaptureMsg[20];
+    snprintf(CaptureMsg, sizeof(CaptureMsg), "Sending%s",
+             dots == 0 ? "." : dots == 1 ? ".."
+                           : dots == 2   ? "..."
+                                         : "....");
+    u8g2.setFont(u8g2_font_5x8_tf);
+    int cx = FindCenterX(u8g2.getStrWidth(CaptureMsg));
+    u8g2.drawStr(cx, 54, CaptureMsg);
+    break;
+  }
+  }
+  u8g2.sendBuffer();
+}
+
+// ==================== SETTING =========================
+
 void applySettings()
 {
   u8g2.setContrast(BrightnessLevelValues[currentSettings.brightnessIndex]);
@@ -1108,6 +1159,138 @@ void applySettings()
                 BrightnessLevelValues[currentSettings.brightnessIndex],
                 DifficultyLevelValues[currentSettings.difficultyIndex],
                 VolumeLevelValues[currentSettings.volumeIndex]);
+}
+
+void toggleBrightnessSetting()
+{
+  if (UPButtonShortPressedGame)
+  {
+    UPButtonShortPressedGame = false;
+    currentSettings.brightnessIndex = (currentSettings.brightnessIndex - 1 + 5) % 5;
+  }
+  else if (DOWNButtonShortPressedGame)
+  {
+    DOWNButtonShortPressedGame = false;
+    currentSettings.brightnessIndex = (currentSettings.brightnessIndex + 1) % 5;
+  }
+}
+void toggleDifficultySetting()
+{
+
+  if (UPButtonShortPressedGame)
+  {
+    UPButtonShortPressedGame = false;
+    currentSettings.difficultyIndex = (currentSettings.difficultyIndex - 1 + 3) % 3;
+  }
+  else if (DOWNButtonShortPressedGame)
+  {
+    DOWNButtonShortPressedGame = false;
+    currentSettings.difficultyIndex = (currentSettings.difficultyIndex + 1) % 3;
+  }
+}
+void toggleSoundSetting()
+{
+
+  if (UPButtonShortPressedGame)
+  {
+    UPButtonShortPressedGame = false;
+    currentSettings.volumeIndex = (currentSettings.volumeIndex - 1 + 5) % 5;
+  }
+  else if (DOWNButtonShortPressedGame)
+  {
+    DOWNButtonShortPressedGame = false;
+    currentSettings.volumeIndex = (currentSettings.volumeIndex + 1) % 5;
+  }
+}
+
+void PlaySettingTone()
+{
+  switch (SelectedSetting)
+  {
+  case 0:
+    buzzer.playOnceTone(currentSettings.brightnessIndex == 0 ? NOTE_E5 : currentSettings.brightnessIndex == 1 ? NOTE_F5
+                                                                     : currentSettings.brightnessIndex == 2   ? NOTE_G5
+                                                                     : currentSettings.brightnessIndex == 3   ? NOTE_A5
+                                                                     : currentSettings.brightnessIndex == 4   ? NOTE_B5
+                                                                                                              : NOTE_C6,
+                        80);
+    break;
+  case 1:
+
+    buzzer.playOnceTone(currentSettings.difficultyIndex == 0 ? NOTE_E5 : currentSettings.difficultyIndex == 1 ? NOTE_F5
+                                                                                                              : NOTE_G5,
+                        80);
+
+    break;
+  case 2:
+    if (VolumeLevelValues[currentSettings.volumeIndex] > 0)
+      buzzer.playOnceTone(NOTE_G5, 80);
+    break;
+  }
+}
+
+void launchSelectedSetting()
+{
+  currentCondition = ON_ELEMENT;
+  buzzer.playOnceTone(1200, 100);
+}
+
+void showSettings()
+{
+  if (currentCondition == ON_ELEMENT)
+  {
+    DrawSettingElement(SelectedSetting);
+    if (DOWNButtonShortPressedGame || UPButtonShortPressedGame)
+    {
+      switch (SelectedSetting)
+      {
+      case 0:
+        toggleBrightnessSetting();
+        settingsMgr.setBrightness(currentSettings.brightnessIndex);
+        break;
+      case 1:
+        toggleDifficultySetting();
+        settingsMgr.setDifficulty(currentSettings.difficultyIndex);
+        break;
+      case 2:
+        toggleSoundSetting();
+        settingsMgr.setVolume(currentSettings.volumeIndex);
+        break;
+      }
+
+      PlaySettingTone();
+      applySettings();
+    }
+    return;
+  }
+  else
+  {
+
+    if (EnterButtonShortPressedGame)
+    {
+      EnterButtonShortPressedGame = false;
+      launchSelectedSetting();
+      return;
+    }
+
+    if (UPButtonShortPressedGame)
+    {
+      UPButtonShortPressedGame = false;
+      SelectedSetting = (SelectedSetting - 1 + NUM_SETTING_MENU) % NUM_SETTING_MENU;
+      SETTING_Selected_outlineY = SelectedSetting * SETTING_ITEM_HEIGHT;
+      buzzer.playOnceTone(800, 50);
+    }
+
+    if (DOWNButtonShortPressedGame)
+    {
+      DOWNButtonShortPressedGame = false;
+      SelectedSetting = (SelectedSetting + 1 + NUM_SETTING_MENU) % NUM_SETTING_MENU;
+      SETTING_Selected_outlineY = SelectedSetting * SETTING_ITEM_HEIGHT;
+      buzzer.playOnceTone(800, 50);
+    }
+
+    DrawSettingMenu();
+  }
 }
 
 void DrawSettingElement(int elementIndex)
@@ -1152,209 +1335,31 @@ void DrawSettingElement(int elementIndex)
   u8g2.sendBuffer();
 }
 
-void toggleBrightnessSetting()
+void DrawSettingMenu()
 {
-  if (UPButtonShortPressedGame || DOWNButtonShortPressedGame)
+  u8g2.firstPage();
+  do
   {
-    if (UPButtonShortPressedGame)
-    {
-      UPButtonShortPressedGame = false;
-      currentSettings.brightnessIndex = (currentSettings.brightnessIndex - 1 + 5) % 5;
-    }
-    else if (DOWNButtonShortPressedGame)
-    {
-      DOWNButtonShortPressedGame = false;
-      currentSettings.brightnessIndex = (currentSettings.brightnessIndex + 1) % 5;
-    }
+    u8g2.drawBitmap(0, SETTING_Selected_outlineY, 128 / 8, 21, setting_menu_bitmap__Icon_selectedOutline);
 
-    PlaySettingTone();
-  }
-}
-void toggleDifficultySetting()
-{
+    u8g2.setDrawColor(SelectedSetting == 0 ? 0 : 1);
+    u8g2.setFont(SelectedSetting == 0 ? u8g2_font_7x14B_mf : u8g2_font_7x14_mf);
+    u8g2.drawStr(27, 16, setting_menu_bitmap_allArray_names[0]);
+    u8g2.setDrawColor(1);
+    u8g2.drawBitmap(3, 2, 2, 16, setting_menu_bitmap_allArray[0]);
 
-  if (UPButtonShortPressedGame || DOWNButtonShortPressedGame)
-  {
-    if (UPButtonShortPressedGame)
-    {
-      UPButtonShortPressedGame = false;
-      currentSettings.difficultyIndex = (currentSettings.difficultyIndex - 1 + 3) % 3;
-    }
-    else if (DOWNButtonShortPressedGame)
-    {
-      DOWNButtonShortPressedGame = false;
-      currentSettings.difficultyIndex = (currentSettings.difficultyIndex + 1) % 3;
-    }
+    u8g2.setDrawColor(SelectedSetting == 1 ? 0 : 1);
+    u8g2.setFont(SelectedSetting == 1 ? u8g2_font_7x14B_mf : u8g2_font_7x14_mf);
+    u8g2.drawStr(27, 38, setting_menu_bitmap_allArray_names[1]);
+    u8g2.setDrawColor(1);
+    u8g2.drawBitmap(3, 24, 2, 16, setting_menu_bitmap_allArray[1]);
 
-    PlaySettingTone();
-  }
-}
-void toggleSoundSetting()
-{
-
-  if (UPButtonShortPressedGame || DOWNButtonShortPressedGame)
-  {
-    if (UPButtonShortPressedGame)
-    {
-      UPButtonShortPressedGame = false;
-      currentSettings.volumeIndex = (currentSettings.volumeIndex - 1 + 5) % 5;
-    }
-    else if (DOWNButtonShortPressedGame)
-    {
-      DOWNButtonShortPressedGame = false;
-      currentSettings.volumeIndex = (currentSettings.volumeIndex + 1) % 5;
-    }
-
-    PlaySettingTone();
-  }
-}
-
-void PlaySettingTone()
-{
-  switch (SelectedSetting)
-  {
-  case 0:
-    buzzer.playOnceTone(currentSettings.brightnessIndex == 0 ? NOTE_E5 : currentSettings.brightnessIndex == 1 ? NOTE_F5
-                                                                     : currentSettings.brightnessIndex == 2   ? NOTE_G5
-                                                                     : currentSettings.brightnessIndex == 3   ? NOTE_A5
-                                                                     : currentSettings.brightnessIndex == 4   ? NOTE_B5
-                                                                                                              : NOTE_C6,
-                        80);
-    break;
-  case 1:
-
-    buzzer.playOnceTone(currentSettings.difficultyIndex == 0 ? NOTE_E5 : currentSettings.difficultyIndex == 1 ? NOTE_F5
-                                                                                                              : NOTE_G5,
-                        80);
-
-    break;
-  case 2:
-    if (VolumeLevelValues[currentSettings.volumeIndex] > 0)
-      buzzer.playOnceTone(NOTE_G5, 80);
-    break;
-  }
-}
-
-void launchSelectedSetting()
-{
-  currentCondition = ON_ELEMENT;
-  buzzer.playOnceTone(1200, 100);
-}
-
-void showSettings()
-{
-  if (currentCondition == ON_ELEMENT)
-  {
-    DrawSettingElement(SelectedSetting);
-    switch (SelectedSetting)
-    {
-    case 0:
-      toggleBrightnessSetting();
-      break;
-    case 1:
-      toggleDifficultySetting();
-      break;
-    case 2:
-      toggleSoundSetting();
-      break;
-    }
-
-    applySettings();
-    return;
-  }
-  else
-  {
-
-    if (EnterButtonShortPressedGame)
-    {
-      EnterButtonShortPressedGame = false;
-      launchSelectedSetting();
-      return;
-    }
-
-    if (UPButtonShortPressedGame)
-    {
-      UPButtonShortPressedGame = false;
-      SelectedSetting = (SelectedSetting - 1 + NUM_SETTING_MENU) % NUM_SETTING_MENU;
-      SETTING_Selected_outlineY = SelectedSetting * SETTING_ITEM_HEIGHT;
-      buzzer.playOnceTone(800, 50);
-    }
-
-    if (DOWNButtonShortPressedGame)
-    {
-      DOWNButtonShortPressedGame = false;
-      SelectedSetting = (SelectedSetting + 1 + NUM_SETTING_MENU) % NUM_SETTING_MENU;
-      SETTING_Selected_outlineY = SelectedSetting * SETTING_ITEM_HEIGHT;
-      buzzer.playOnceTone(800, 50);
-    }
-
-    u8g2.firstPage();
-    do
-    {
-      u8g2.drawBitmap(0, SETTING_Selected_outlineY, 128 / 8, 21, second_menu_bitmap__Icon_selectedOutline);
-
-      u8g2.setDrawColor(SelectedSetting == 0 ? 0 : 1);
-      u8g2.setFont(SelectedSetting == 0 ? u8g2_font_7x14B_mf : u8g2_font_7x14_mf);
-      u8g2.drawStr(27, 16, setting_menu_bitmap_allArray_names[0]);
-      u8g2.setDrawColor(1);
-      u8g2.drawBitmap(3, 2, 2, 16, setting_menu_bitmap_allArray[0]);
-
-      u8g2.setDrawColor(SelectedSetting == 1 ? 0 : 1);
-      u8g2.setFont(SelectedSetting == 1 ? u8g2_font_7x14B_mf : u8g2_font_7x14_mf);
-      u8g2.drawStr(27, 38, setting_menu_bitmap_allArray_names[1]);
-      u8g2.setDrawColor(1);
-      u8g2.drawBitmap(3, 24, 2, 16, setting_menu_bitmap_allArray[1]);
-
-      u8g2.setDrawColor(SelectedSetting == 2 ? 0 : 1);
-      u8g2.setFont(SelectedSetting == 2 ? u8g2_font_7x14B_mf : u8g2_font_7x14_mf);
-      u8g2.drawStr(27, 58, setting_menu_bitmap_allArray_names[2]);
-      u8g2.setDrawColor(1);
-      u8g2.drawBitmap(3, 46, 2, 16, setting_menu_bitmap_allArray[2]);
-    } while (u8g2.nextPage());
-  }
-}
-
-void DrawIrMenuElement(int elementIndex)
-{
-  u8g2.clearBuffer();
-  switch (elementIndex)
-  {
-  case 0:
-  {
-    IRCaptureAnim.update();
-    IRCaptureAnim.draw(u8g2);
-
-    unsigned long elapsed = millis() - CaptureStartTime;
-    int dots = (elapsed / 400) % 4; // 0..3 titik bergantian
-    char CaptureMsg[20];
-    snprintf(CaptureMsg, sizeof(CaptureMsg), "Capturing%s",
-             dots == 0 ? "." : dots == 1 ? ".."
-                           : dots == 2   ? "..."
-                                         : "....");
-    u8g2.setFont(u8g2_font_5x8_tf);
-    int cx = FindCenterX(u8g2.getStrWidth(CaptureMsg));
-    u8g2.drawStr(cx, 54, CaptureMsg);
-    break;
-  }
-  case 1:
-  {
-    IRSendingAnim.update();
-    IRSendingAnim.draw(u8g2);
-
-    unsigned long elapsed = millis() - CaptureStartTime;
-    int dots = (elapsed / 400) % 4; // 0..3 titik bergantian
-    char CaptureMsg[20];
-    snprintf(CaptureMsg, sizeof(CaptureMsg), "Sending%s",
-             dots == 0 ? "." : dots == 1 ? ".."
-                           : dots == 2   ? "..."
-                                         : "....");
-    u8g2.setFont(u8g2_font_5x8_tf);
-    int cx = FindCenterX(u8g2.getStrWidth(CaptureMsg));
-    u8g2.drawStr(cx, 54, CaptureMsg);
-    break;
-  }
-  }
-  u8g2.sendBuffer();
+    u8g2.setDrawColor(SelectedSetting == 2 ? 0 : 1);
+    u8g2.setFont(SelectedSetting == 2 ? u8g2_font_7x14B_mf : u8g2_font_7x14_mf);
+    u8g2.drawStr(27, 58, setting_menu_bitmap_allArray_names[2]);
+    u8g2.setDrawColor(1);
+    u8g2.drawBitmap(3, 46, 2, 16, setting_menu_bitmap_allArray[2]);
+  } while (u8g2.nextPage());
 }
 
 void launchSelectedIrMenu()
@@ -1527,7 +1532,7 @@ void IRClonning()
   do
   {
     u8g2.drawBitmap(0, IR_MENU_Selected_outlineY, 128 / 8, 21,
-                    second_menu_bitmap__Icon_selectedOutline);
+                    setting_menu_bitmap__Icon_selectedOutline);
 
     u8g2.setDrawColor(SelectedIrMenu == 0 ? 0 : 1);
     u8g2.setFont(SelectedIrMenu == 0 ? u8g2_font_7x14B_mf : u8g2_font_7x14_mf);
