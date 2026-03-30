@@ -116,7 +116,7 @@ void loop()
 
     StartupAnim.update();
     u8g2.clearBuffer();
-    StartupAnim.draw(u8g2); // draw() gantikan render()
+    StartupAnim.draw(u8g2); // Draw UI anim
     u8g2.drawStr(20, 61, scanMsg);
     u8g2.sendBuffer();
 
@@ -338,7 +338,8 @@ void exitGame()
   currentGame = -1;
   SelectedSetting = 0;
   SETTING_Selected_outlineY = 0;
-  // Reset WiFi scan state agar mulai bersih saat masuk lagi
+
+  // Reset WiFi scan state
   wifiScanState = WIFI_IDLE;
   lastWifiScan = 0;
   WiFi.scanDelete();
@@ -353,17 +354,15 @@ void ToSubMenu()
 
 // ==================== PING PONG GAME ====================
 // Difficulty changes:
-//   Easy  → paddle H=20, ball speed=2, AI reaction=1
-//   Med   → paddle H=15, ball speed=3, AI reaction=2
-//   Hard  → paddle H=10, ball speed=4, AI reaction=3
+//   Easy  → paddle H=20, ball speed=2
+//   Med   → paddle H=15, ball speed=3
+//   Hard  → paddle H=10, ball speed=4
 void initPongGame()
 {
   int diff = getDiff();
 
-  // Paddle height berkurang saat kesulitan naik
   pongPaddleHeight = 20 - (diff * 5); // 20 / 15 / 10
 
-  // Kecepatan bola meningkat
   pongBallSpeed = 2 + diff; // 2 / 3 / 4
 
   paddleY = (SCREEN_HEIGHT - pongPaddleHeight) / 2;
@@ -460,7 +459,7 @@ void initCarObstacleGame()
 
 void updateCarObstacleGame()
 {
-  int obsW = 10 + (getDiff() * 2); // 10 / 12 / 14  — rintangan lebih lebar di Hard
+  int obsW = 10 + (getDiff() * 2); // 10 / 12 / 14 - Difficulty for each Diff
 
   sensors_event_t a, g, temp;
   mpu.getEvent(&a, &g, &temp);
@@ -525,7 +524,7 @@ void initSnakeGame()
 {
   int diff = getDiff();
 
-  // Kecepatan gerak ular
+  // Speed
   SNAKE_SPEED = 200 - (diff * 60); // 200 / 140 / 80 ms
 
   snakeLength = 5;
@@ -580,7 +579,7 @@ void updateSnakeGame()
   bool died = false;
   if (getDiff() < 2)
   {
-    // Easy & Med: wrap (tembus dinding)
+    // Easy & Med: wrap Walls
     if (snake[0].x < 0)
       snake[0].x = SCREEN_WIDTH - SNAKE_SIZE;
     if (snake[0].x >= SCREEN_WIDTH)
@@ -592,13 +591,13 @@ void updateSnakeGame()
   }
   else
   {
-    // Hard: mati jika tabrak dinding
+    // Hard: Die if hit wall
     if (snake[0].x < 0 || snake[0].x >= SCREEN_WIDTH ||
         snake[0].y < 12 || snake[0].y >= SCREEN_HEIGHT)
       died = true;
   }
 
-  // Self collision (semua difficulty)
+  // Self collision
   for (int i = 1; i < snakeLength; i++)
   {
     if (snake[0].x == snake[i].x && snake[0].y == snake[i].y)
@@ -711,15 +710,15 @@ void updateWifiScanner()
 
   case WIFI_SCANNING:
   {
-    // Cek apakah scan sudah selesai
+    // Cek if WIFI scan complete
     int result = WiFi.scanComplete();
 
     if (result == WIFI_SCAN_RUNNING)
     {
-      // Scan masih berjalan, tidak perlu delay — buzzer tetap jalan
+      // check if scanStartTime is over WIFISCAN_TIMEOUT_MS to avoid waiting too long if scan gets stuck
       if (now - scanStartTime > WIFI_SCAN_TIMEOUT_MS)
       {
-        // Timeout — batalkan dan coba lagi nanti
+        // Timeout
         WiFi.scanDelete();
         lastWifiScan = now;
         wifiScanState = WIFI_IDLE;
@@ -728,7 +727,7 @@ void updateWifiScanner()
       break;
     }
 
-    // Scan selesai (result = jumlah network atau error negatif)
+    // complete scan if result >= 0, then read results and delete scan data to free memory
     if (result >= 0)
     {
       wifiNetworkCount = min(result, 10);
@@ -737,7 +736,7 @@ void updateWifiScanner()
         wifiSSID[i] = WiFi.SSID(i);
         wifiRSSI[i] = WiFi.RSSI(i);
       }
-      WiFi.scanDelete(); // bebaskan memori hasil scan
+      WiFi.scanDelete(); // free memory from scan results
       buzzer.playOnceTone(1000, 50);
       Serial.printf("[WiFi] Scan done: %d networks\n", wifiNetworkCount);
     }
@@ -755,14 +754,14 @@ void updateWifiScanner()
   }
 
   case WIFI_DONE:
-    // Tampilkan hasil sampai interval berikutnya
+
+    // Show results until interval passes, then go back to IDLE to start new scan
     if (now - lastWifiScan >= WIFI_SCAN_INTERVAL)
     {
       wifiScanState = WIFI_IDLE;
     }
     break;
   }
-  // Tidak ada delay() di sini agar buzzer tetap responsif
 }
 
 void drawWifiScanner()
@@ -775,13 +774,14 @@ void drawWifiScanner()
   case WIFI_IDLE:
   case WIFI_SCANNING:
   {
-    // Tampilkan animasi titik berdasarkan waktu (tanpa delay)
+    // Animation
 
     WifiScanAnim.update();
     WifiScanAnim.draw(u8g2);
 
     unsigned long elapsed = millis() - scanStartTime;
-    int dots = (elapsed / 400) % 4; // 0..3 titik bergantian
+    // Dot anim
+    int dots = (elapsed / 400) % 4;
     char scanMsg[20];
     snprintf(scanMsg, sizeof(scanMsg), "Scanning%s",
              dots == 0 ? "." : dots == 1 ? ".."
@@ -963,7 +963,7 @@ void initGeoDashGame()
   int diff = getDiff();
 
   gdPillarSpeed = 2 + diff;   // 2 / 3 / 4
-  gdGapMin = 30 - (diff * 6); // 30 / 24 / 18  → celah makin sempit
+  gdGapMin = 30 - (diff * 6); // 30 / 24 / 18  → min pillar gap for y cordinate
 
   cubeX = 30;
   cubeY = SCREEN_HEIGHT / 2;
@@ -971,7 +971,7 @@ void initGeoDashGame()
   cubeIsFlying = false;
   gdScore = 0;
 
-  int spacing = 60 - (diff * 10); // 60 / 50 / 40 → pilar lebih rapat di Hard
+  int spacing = 60 - (diff * 10); // 60 / 50 / 40 → pillar spacing for x cordinates
   for (int i = 0; i < MAX_GD_OBSTACLES; i++)
   {
     gdObstacles[i].x = SCREEN_WIDTH + (i * spacing);
@@ -1218,11 +1218,11 @@ void showSettings()
       PlaySettingTone();
       applySettings();
     }
-    return;
   }
   else
   {
 
+    // Button Logic
     if (EnterButtonShortPressedGame)
     {
       EnterButtonShortPressedGame = false;
