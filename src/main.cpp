@@ -199,10 +199,7 @@ void loop()
       }
       else
       {
-        if (currentCondition != ON_ELEMENT)
-        {
-          EnterButtonShortPressedGame = true;
-        }
+        EnterButtonShortPressedGame = true;
       }
     }
 
@@ -656,9 +653,9 @@ void updateAngleMonitor()
   mpu.getEvent(&a, &g, &temp);
   angleX = atan2(a.acceleration.y, a.acceleration.z) * 180.0 / PI;
   angleY = atan2(a.acceleration.x, a.acceleration.z) * 180.0 / PI;
-  angleZ = atan2(a.acceleration.y, a.acceleration.x) * 180.0 / PI;
   delay(50);
 }
+
 void drawAngleMonitor()
 {
   u8g2.clearBuffer();
@@ -673,10 +670,6 @@ void drawAngleMonitor()
   u8g2.setCursor(5, 44);
   u8g2.print("Y: ");
   u8g2.print(angleY, 1);
-  u8g2.print(" deg");
-  u8g2.setCursor(5, 58);
-  u8g2.print("Z: ");
-  u8g2.print(angleZ, 1);
   u8g2.print(" deg");
   u8g2.sendBuffer();
 }
@@ -1196,6 +1189,10 @@ void showSettings()
 {
   if (currentCondition == ON_ELEMENT)
   {
+
+    if (EnterButtonShortPressedGame)
+      EnterButtonShortPressedGame = false;
+
     DrawSettingElement(SelectedSetting);
     if (DOWNButtonShortPressedGame || UPButtonShortPressedGame)
     {
@@ -1399,6 +1396,7 @@ void IRClonning()
         else
           buzzer.playOnceTone(400, 300); // feedback: kosong
         CaptureStartTime = millis();     // reset timer teks
+        Serial.printf("[IR] Send result: %d\n", res);
       }
 
       if (UPButtonShortPressedGame)
