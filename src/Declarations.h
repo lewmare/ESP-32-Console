@@ -3,6 +3,7 @@
 
 // ==================== FUNCTION DECLARATIONS ====================
 void drawMenu();
+void drawScrollbar();
 void handleButtonPress();
 void launchGame(int gameIndex);
 void exitGame();
@@ -49,5 +50,9 @@ void DrawSettingMenu();
 void DrawSettingElement(int elementIndex);
 
 void PlaySettingTone();
+
+void _DisplayStartupScreen();
+void _UpdateActiveGame();
+void _HandleGameInput();
 
 #endif
