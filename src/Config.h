@@ -31,9 +31,6 @@ const int SCREEN_WIDTH = 128;
 const int SCREEN_HEIGHT = 64;
 const int Buzzer_Channel = 0;
 
-float mpuOffsetX = 0;
-float mpuOffsetY = 0;
-
 // ======= FOR DOUBLE SETTING FITUR
 enum Condition
 {

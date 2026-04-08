@@ -78,8 +78,6 @@ void setup()
 
   sensors_event_t a, g, t;
   mpu.getEvent(&a, &g, &t);
-  mpuOffsetX = a.acceleration.x;
-  mpuOffsetY = a.acceleration.y;
 
   WiFi.mode(WIFI_STA);
   WiFi.disconnect();
