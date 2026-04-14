@@ -346,7 +346,10 @@ void drawMenu()
 
 void drawScrollbar()
 {
-  int scrollbarY = 3 + ((64 / NUM_ITEMS) * item_selected);
+  // int scrollbarY = 3 + ((64 / NUM_ITEMS) * item_selected);
+
+  int scrollbarY = (NUM_ITEMS > 0) ? 3 + ((64 / NUM_ITEMS) * item_selected) : 3;
+
   u8g2.drawBox(125, scrollbarY, 3, 5);
 }
 
@@ -846,9 +849,13 @@ void updateWifiScanner()
       wifiNetworkCount = min(result, 10);
       for (int i = 0; i < wifiNetworkCount; i++)
       {
+
+        wifiSSID[i] = ""; // Clear previous SSID to avoid leftover data if new scan has fewer networks
+
         wifiSSID[i] = WiFi.SSID(i);
         wifiRSSI[i] = WiFi.RSSI(i);
       }
+
       WiFi.scanDelete(); // Free memory
       buzzer.playOnceTone(1000, 50);
       Serial.printf("[WiFi] Scan complete: %d networks found\n", wifiNetworkCount);
@@ -935,9 +942,11 @@ void drawWifiScanner()
         u8g2.setCursor(2, yPos);
 
         // Truncate long SSIDs
-        String networkName = wifiSSID[i];
-        if (networkName.length() > 15)
-          networkName = networkName.substring(0, 15);
+        char networkName[16];
+        wifiSSID[i].toCharArray(networkName, sizeof(networkName));
+
+        if (strlen(networkName) > 15)
+          networkName[15] = '\0';
 
         u8g2.print(networkName);
         u8g2.print(" ");
