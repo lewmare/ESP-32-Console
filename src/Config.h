@@ -240,7 +240,7 @@ Credit credits[] = {
     {"Circuit Design", "Akhdan Rafif O"},
     {"Game Developer", "Akhdan Rafif O"},
     {"UI Designer", "Akhdan Rafif O"},
-    {"Tester", "Akhdan Rafif O"},
+    {"Tester", "Mahardika R"},
     {"Social Media", "@akhdn.v"},
     {"Special Thanks", "You, the player!"}};
 int totalCredits = sizeof(credits) / sizeof(credits[0]);
