@@ -161,7 +161,9 @@ unsigned long lastSnakeMove = 0;
 int SNAKE_SPEED = 150; // diset saat init
 
 // ==================== ANGLE MONITOR VARIABLES ====================
-float angleX = 0, angleY = 0;
+float angleX = 0, angleY = 0, angleZ = 0;
+unsigned long lastTimeForZangle = 0;
+float gyroZ_offset = 0;
 
 // ==================== WIFI SCANNER VARIABLES ====================
 // Menggunakan WiFi.scanNetworks(true) = async, agar buzzer tidak terganggu

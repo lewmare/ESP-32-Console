@@ -62,6 +62,8 @@ void setup()
   Wire.begin(21, 22);
   Serial.begin(921600);
 
+  delay(1000);
+
   // Load persistent settings from EEPROM
   settingsMgr.begin();
   currentSettings.brightnessIndex = settingsMgr.getBrightness();
@@ -88,14 +90,21 @@ void setup()
   // Initialize motion sensor (accelerometer/gyroscope)
   if (!mpu.begin())
   {
-    Serial.println("[ERROR] MPU6050 not detected!");
+    Serial.println("MPU6050 tidak terdeteksi!");
     while (1)
-      delay(100);
+      yield();
   }
 
-  // Discard initial sensor reading
-  sensors_event_t a, g, t;
-  mpu.getEvent(&a, &g, &t);
+  Serial.println("[SYSTEM] Calibrating gyro Z-axis offset...");
+
+  for (int i = 0; i < 100; i++)
+  {
+    sensors_event_t a, g, temp;
+    mpu.getEvent(&a, &g, &temp);
+    gyroZ_offset += g.gyro.z;
+    delay(10);
+  }
+  gyroZ_offset /= 100;
 
   // Configure WiFi in station mode
   WiFi.mode(WIFI_STA);
@@ -124,7 +133,7 @@ void loop()
   buzzer.update();
 
   // Display startup animation during initialization
-  if (millis() < startupStartTime)
+  if (millis() - startupStartTime < 5000) // Adjust the duration as needed
   {
     _DisplayStartupScreen();
     settingsMgr.printSettingsSummary();
@@ -769,6 +778,20 @@ void updateAngleMonitor()
   sensors_event_t accelerometer, gyroscope, temperature;
   mpu.getEvent(&accelerometer, &gyroscope, &temperature);
 
+  // Hitung delta waktu (dt)
+  unsigned long currentTime = millis();
+  float dt = (currentTime - lastTimeForZangle) / 1000.0;
+  lastTimeForZangle = currentTime;
+
+  float gyroZ = gyroscope.gyro.z - gyroZ_offset;
+
+  // Abaikan noise kecil (threshold)
+  if (abs(gyroZ) < 0.02)
+    gyroZ = 0;
+
+  // Integrasi: Radian ke Derajat
+  angleZ += (gyroZ * dt) * (180.0 / M_PI);
+
   // Calculate angles from acceleration vectors
   angleX = atan2(accelerometer.acceleration.y, accelerometer.acceleration.z) * 180.0 / PI;
   angleY = atan2(accelerometer.acceleration.x, accelerometer.acceleration.z) * 180.0 / PI;
@@ -792,6 +815,11 @@ void drawAngleMonitor()
   u8g2.setCursor(5, 44);
   u8g2.print("Y: ");
   u8g2.print(angleY, 1); // Print with 1 decimal place
+  u8g2.print(" deg");
+
+  u8g2.setCursor(5, 58);
+  u8g2.print("Z: ");
+  u8g2.print(angleZ, 1); // Print with 1 decimal place
   u8g2.print(" deg");
 
   u8g2.sendBuffer();
