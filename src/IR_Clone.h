@@ -83,9 +83,13 @@ public:
         else
         {
             _lastRecvMs = millis();
-            int slot = _allocSlot();
+            // Simpan ke slot yang sedang dipilih (bukan FIFO otomatis)
+            // Sehingga user bisa pilih slot sebelum capture
+            int slot = _selectedIdx;
             _store(slot, _results);
-            _selectedIdx = slot;
+            // Update count jika slot baru
+            if (slot >= _count)
+                _count = slot + 1;
             res = IR_RESULT_OK;
             Serial.printf("[IR] Captured slot#%d — %s\n",
                           slot + 1, describeSelected().c_str());
@@ -98,7 +102,9 @@ public:
     // ── send() ────────────────────────────────────────────────
     // Kirim sinyal slot terpilih.
     // Return IRSendResult — main.cpp yang urus buzzer/display.
-    IRSendResult send()
+    // repeat: berapa kali sinyal dikirim ulang (default 3)
+    //         lebih banyak = lebih reliable untuk proyektor/AC
+    IRSendResult send(uint8_t repeat = 3)
     {
         if (!_irsend || _count == 0 || !_signals[_selectedIdx].valid)
             return IR_SEND_EMPTY;
@@ -106,10 +112,22 @@ public:
         _irrecv->disableIRIn();
 
         const IRSignalData &s = _signals[_selectedIdx];
-        if (s.isRaw)
-            _irsend->sendRaw(s.rawData, s.rawLen, 38);
-        else
-            _irsend->send(s.protocol, s.value, s.bits);
+
+        for (uint8_t i = 0; i < repeat; i++)
+        {
+            if (s.isRaw)
+            {
+                _irsend->sendRaw(s.rawData, s.rawLen, 38);
+            }
+            else
+            {
+                // Kirim sinyal utama
+                _irsend->send(s.protocol, s.value, s.bits);
+            }
+            // Jeda antar pengiriman (~108ms = standar NEC repeat interval)
+            if (i < repeat - 1)
+                delay(108);
+        }
 
         delay(100);
         _irrecv->enableIRIn();
@@ -119,23 +137,60 @@ public:
         return IR_SEND_OK;
     }
 
-    // ── nextSlot() ────────────────────────────────────────────
+    // ── Slot navigation ──────────────────────────────────────
+    // Berlaku untuk mode Capture maupun Send
     void nextSlot()
     {
-        if (_count > 1)
+        _selectedIdx = (_selectedIdx + 1) % IR_MAX_SIGNALS;
+        Serial.printf("[IR] Slot → #%d (%s)\n",
+                      _selectedIdx + 1,
+                      _signals[_selectedIdx].valid ? "isi" : "kosong");
+    }
+
+    void prevSlot()
+    {
+        _selectedIdx = (_selectedIdx - 1 + IR_MAX_SIGNALS) % IR_MAX_SIGNALS;
+        Serial.printf("[IR] Slot → #%d (%s)\n",
+                      _selectedIdx + 1,
+                      _signals[_selectedIdx].valid ? "isi" : "kosong");
+    }
+
+    // Set slot langsung ke index tertentu (0-based)
+    void setSlot(int idx)
+    {
+        if (idx >= 0 && idx < IR_MAX_SIGNALS)
         {
-            _selectedIdx = (_selectedIdx + 1) % _count;
-            Serial.printf("[IR] Slot → #%d\n", _selectedIdx + 1);
+            _selectedIdx = idx;
+            Serial.printf("[IR] Slot set → #%d\n", _selectedIdx + 1);
         }
     }
 
-    void previousSlot()
+    // Cek apakah slot tertentu sudah terisi
+    bool slotHasSignal(int idx) const
     {
-        if (_count > 1)
+        if (idx < 0 || idx >= IR_MAX_SIGNALS)
+            return false;
+        return _signals[idx].valid;
+    }
+
+    // Deskripsi slot tertentu (bukan hanya selected)
+    String describeSlot(int idx) const
+    {
+        if (idx < 0 || idx >= IR_MAX_SIGNALS)
+            return "(invalid)";
+        const IRSignalData &s = _signals[idx];
+        if (!s.valid)
+            return "(kosong)";
+        if (s.isRaw)
         {
-            _selectedIdx = (_selectedIdx - 1 + _count) % _count;
-            Serial.printf("[IR] Slot → #%d\n", _selectedIdx + 1);
+            char b[20];
+            snprintf(b, sizeof(b), "RAW %d pulses", s.rawLen);
+            return String(b);
         }
+        char b[28];
+        snprintf(b, sizeof(b), "%s %dbit",
+                 typeToString(s.protocol, false).c_str(), s.bits);
+        return String(b);
     }
 
     // ── Getters ───────────────────────────────────────────────

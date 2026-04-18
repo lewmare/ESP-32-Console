@@ -1591,48 +1591,55 @@ void IRClonning()
     // ════════════════════════════════════════════════════════
     case 0:
     {
-      IRCaptureResult captureResult = irManager.update();
+      // ── Navigasi slot ──────────────────────────────
+      if (UPButtonShortPressedGame)
+      {
+        UPButtonShortPressedGame = false;
+        irManager.prevSlot(); // ← pindah slot
+        buzzer.playOnceTone(800, 50);
+        CaptureStartTime = millis();
+      }
 
-      // Feedback: signal captured
-      if (captureResult == IR_RESULT_OK)
+      if (DOWNButtonShortPressedGame)
+      {
+        DOWNButtonShortPressedGame = false;
+        irManager.nextSlot(); // ← pindah slot
+        buzzer.playOnceTone(800, 50);
+        CaptureStartTime = millis();
+      }
+
+      if (EnterButtonShortPressedGame)
+        EnterButtonShortPressedGame = false; // No action on Enter in capture mode (auto-capture)
+
+      // ── Receive ────────────────────────────────────
+      IRCaptureResult res = irManager.update();
+      if (res == IR_RESULT_OK)
       {
         buzzer.playOnceTone(1200, 80);
         CaptureStartTime = millis();
       }
 
+      // ── Display ────────────────────────────────────
       u8g2.clearBuffer();
       IRCaptureAnim.update();
       IRCaptureAnim.draw(u8g2);
 
       u8g2.setFont(u8g2_font_5x8_tf);
 
-      if (captureResult == IR_RESULT_OK || irManager.hasSignal())
-      {
-        // Display captured signal information
-        char line1[24], line2[20];
-        snprintf(line1, sizeof(line1), "OK! %s",
-                 irManager.describeSelected().c_str());
-        snprintf(line2, sizeof(line2), "Slot %s saved",
-                 irManager.slotLabel().c_str());
+      // Baris 1: info slot saat ini
+      char line1[24];
+      char hint[32];
+      snprintf(line1, sizeof(line1), "Slot %s: %s",
+               irManager.slotLabel().c_str(),
+               irManager.slotHasSignal(irManager.getSelectedIdx())
+                   ? irManager.describeSelected().c_str()
+                   : "kosong");
+      u8g2.drawStr(FindCenterX(u8g2.getStrWidth(line1)), 54, line1);
 
-        int centerX1 = FindCenterX(u8g2.getStrWidth(line1));
-        int centerX2 = FindCenterX(u8g2.getStrWidth(line2));
-        u8g2.drawStr(centerX1, 54, line1);
-        u8g2.drawStr(centerX2, 63, line2);
-      }
-      else
-      {
-        // Waiting for signal: show animated progress
-        unsigned long elapsedTime = millis() - CaptureStartTime;
-        int progressDots = (elapsedTime / 400) % 4;
-        char statusMsg[20];
-        snprintf(statusMsg, sizeof(statusMsg), "Capturing%s",
-                 progressDots == 0 ? "." : progressDots == 1 ? ".."
-                                       : progressDots == 2   ? "..."
-                                                             : "....");
-        int centerX = FindCenterX(u8g2.getStrWidth(statusMsg));
-        u8g2.drawStr(centerX, 54, statusMsg);
-      }
+      // Baris 2: instruksi
+      snprintf(hint, sizeof(hint), "Press=GantiSlot Aim=Record");
+      u8g2.setFont(u8g2_font_4x6_tf);
+      u8g2.drawStr(FindCenterX(u8g2.getStrWidth(hint)), 63, hint);
 
       u8g2.sendBuffer();
       break;
@@ -1662,7 +1669,7 @@ void IRClonning()
       if (UPButtonShortPressedGame)
       {
         UPButtonShortPressedGame = false;
-        irManager.previousSlot();
+        irManager.prevSlot();
         buzzer.playOnceTone(800, 50);
         CaptureStartTime = millis();
       }
