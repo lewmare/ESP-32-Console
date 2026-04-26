@@ -22,8 +22,8 @@ Adafruit_MPU6050 mpu;                                            // Motion Senso
 #include "StorageManager.h"
 #include "IR_Clone.h"
 
-SettingsManager settingsMgr; // Persistent settings storage
-IRManager irManager;         // IR capture and transmission
+SettingsManager storageMgr; // Persistent settings storage
+IRManager irManager;        // IR capture and transmission
 
 // ============================================================================
 //  Animation Engine (Bitmap Animations)
@@ -62,13 +62,13 @@ void setup()
   Wire.begin(21, 22);
   Serial.begin(921600);
 
-  delay(1000);
+  delay(100); // Short delay to stabilize after power-up
 
   // Load persistent settings from EEPROM
-  settingsMgr.begin();
-  currentSettings.brightnessIndex = settingsMgr.getBrightness();
-  currentSettings.difficultyIndex = settingsMgr.getDifficulty();
-  currentSettings.volumeIndex = settingsMgr.getVolume();
+  storageMgr.begin();
+  currentSettings.brightnessIndex = storageMgr.getBrightness();
+  currentSettings.difficultyIndex = storageMgr.getDifficulty();
+  currentSettings.volumeIndex = storageMgr.getVolume();
   applySettings();
 
   // Configure button inputs
@@ -95,14 +95,16 @@ void setup()
       yield();
   }
 
+  delay(100); // Short delay to allow sensor to stabilize
+
   Serial.println("[SYSTEM] Calibrating gyro Z-axis offset...");
 
-  for (int i = 0; i < 100; i++)
+  for (int i = 0; i < mpuCalibrationDelay / 10; i++)
   {
     sensors_event_t a, g, temp;
     mpu.getEvent(&a, &g, &temp);
     gyroZ_offset += g.gyro.z;
-    delay(10);
+    delay(mpuCalibrationDelay / 100);
   }
   gyroZ_offset /= 100;
 
@@ -133,10 +135,10 @@ void loop()
   buzzer.update();
 
   // Display startup animation during initialization
-  if (millis() - startupStartTime < 5000) // Adjust the duration as needed
+  if (millis() - 200 - mpuCalibrationDelay <= startupDuration) // Adjust the duration as needed
   {
     _DisplayStartupScreen();
-    settingsMgr.printSettingsSummary();
+    storageMgr.printSettingsSummary();
     return;
   }
 
@@ -1438,15 +1440,15 @@ void showSettings()
       {
       case 0:
         toggleBrightnessSetting();
-        settingsMgr.setBrightness(currentSettings.brightnessIndex);
+        storageMgr.setBrightness(currentSettings.brightnessIndex);
         break;
       case 1:
         toggleDifficultySetting();
-        settingsMgr.setDifficulty(currentSettings.difficultyIndex);
+        storageMgr.setDifficulty(currentSettings.difficultyIndex);
         break;
       case 2:
         toggleSoundSetting();
-        settingsMgr.setVolume(currentSettings.volumeIndex);
+        storageMgr.setVolume(currentSettings.volumeIndex);
         break;
       }
 

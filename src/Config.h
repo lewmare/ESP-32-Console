@@ -47,8 +47,8 @@ void ToggleCondition(Condition newCondition)
 }
 
 // Startup Variables
-unsigned long startupStartTime = 2000;
-
+short startupDuration = 4000;     // Durasi tampilan startup screen (ms)
+short mpuCalibrationDelay = 1000; // Durasi delay di setup() sebelum main loop (ms)
 // ===================== SETTING VARIABLES =====================
 int SelectedSetting = 0;
 const int SETTING_ITEM_HEIGHT = 21;
