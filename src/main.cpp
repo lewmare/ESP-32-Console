@@ -1749,6 +1749,7 @@ void IRClonning()
   {
     UPButtonShortPressedGame = false;
     DOWNButtonShortPressedGame = false;
+
     SelectedIrMenu = (SelectedIrMenu + 1) % NUM_IR_MENU;
     IR_MENU_Selected_outlineY = SelectedIrMenu * IR_MENU_ITEM_HEIGHT;
     buzzer.playOnceTone(800, 50);
@@ -1758,22 +1759,29 @@ void IRClonning()
   u8g2.firstPage();
   do
   {
-    u8g2.drawBitmap(0, IR_MENU_Selected_outlineY, 128 / 8, 21,
-                    setting_menu_bitmap__Icon_selectedOutline);
+    u8g2.setFontMode(1);
+    u8g2.setBitmapMode(1);
 
-    // Option 0: Capture mode
-    u8g2.setDrawColor(SelectedIrMenu == 0 ? 0 : 1);
-    u8g2.setFont(SelectedIrMenu == 0 ? u8g2_font_7x14B_mf : u8g2_font_7x14_mf);
-    u8g2.drawStr(27, 16, IR_MENU[0]);
     u8g2.setDrawColor(1);
-    u8g2.drawBitmap(3, 2, 2, 16, setting_menu_bitmap_allArray[0]);
 
-    // Option 1: Transmit mode
-    u8g2.setDrawColor(SelectedIrMenu == 1 ? 0 : 1);
-    u8g2.setFont(SelectedIrMenu == 1 ? u8g2_font_7x14B_mf : u8g2_font_7x14_mf);
-    u8g2.drawStr(27, 38, IR_MENU[1]);
+    u8g2.drawBox(SelectedIrMenu == 0 ? 0 : 64, 0, 64, 63);
+
+    if (SelectedIrMenu == 0)
+      u8g2.drawXBM(64, 0, 18, 63, image_SelectedOutline_L_bits);
+    else
+      u8g2.drawXBM(46, 0, 18, 63, image_SelectedOutline_R_bits);
+
+    u8g2.setDrawColor(2);
+
+    u8g2.drawXBM(20, 12, 26, 32, image_Capture_Icon_bits);
+    u8g2.drawXBM(81, 12, 32, 32, image_Send_Icon_bits);
+
+    u8g2.setFont(u8g2_font_6x12_tr);
+    u8g2.drawStr(13, 56, "Capture");
+
+    u8g2.drawStr(85, 57, "Send");
+
     u8g2.setDrawColor(1);
-    u8g2.drawBitmap(3, 24, 2, 16, setting_menu_bitmap_allArray[1]);
 
   } while (u8g2.nextPage());
 }
