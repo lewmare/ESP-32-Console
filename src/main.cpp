@@ -88,12 +88,11 @@ void setup()
   ledcAttachPin(BUZZER_PIN, 0);
 
   // Initialize motion sensor (accelerometer/gyroscope)
-  if (!mpu.begin())
-  {
-    Serial.println("MPU6050 tidak terdeteksi!");
-    while (1)
-      yield();
+  if (!mpu.begin(0x68, &Wire, 0)) {
+    Serial.println("Pustaka Adafruit gagal mengenali chip. Mencoba abaikan ID...");
+    while (1) { delay(10); }
   }
+
 
   delay(100); // Short delay to allow sensor to stabilize
 
